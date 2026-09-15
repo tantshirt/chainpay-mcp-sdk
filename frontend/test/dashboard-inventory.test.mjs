@@ -105,7 +105,7 @@ test("Dashboard source uses published Astryx inventory primitives", async () => 
   assert.equal(dashboard.includes("inputMode=\"decimal\""), false, "Astryx TextInput 0.6.1 has no inputMode prop");
 });
 
-test("DashboardNav renders all ten destinations and protocol", async () => {
+test("DashboardNav renders ordered workspace and secondary destinations", async () => {
   const outfile = join(frontendRoot, "test/.tmp-dashboard-nav.mjs");
   await esbuild.build({
     absWorkingDir: frontendRoot,
@@ -151,9 +151,10 @@ test("DashboardNav renders all ten destinations and protocol", async () => {
       }));
     });
     const labels = [...host.querySelectorAll("button")].map((button) => button.textContent ?? "");
-    for (const label of ["Overview", "Mandates", "Payments", "Agents", "Receipts", "AI inbox", "Tools", "Connect MCP", "Protocol", "Settings", "Back to site"]) {
+    for (const label of ["Overview", "Agents", "Spending permissions", "Payments", "Receipts", "Requests", "Developer tools", "Protocol", "Settings", "Back to site"]) {
       assert.ok(labels.some((text) => text.includes(label)), `missing ${label}`);
     }
+    assert.deepEqual(labels.slice(0, 6), ["Overview", "Agents", "Spending permissions", "Payments", "Receipts", "Requests"]);
     const protocol = [...host.querySelectorAll("button")].find((button) => /Protocol/.test(button.textContent ?? ""));
     await act(async () => { protocol.click(); });
     assert.deepEqual(selected, ["protocol"]);

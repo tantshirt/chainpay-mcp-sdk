@@ -41,8 +41,8 @@ export function Router({ children }: { children: ReactNode }) {
 
   const navigate = useCallback<NavigateFn>((route, options) => {
     const path = buildPath(route);
-    if (options?.replace) window.history.replaceState(window.history.state, "", path);
-    else window.history.pushState(window.history.state, "", path);
+    if (options?.replace) window.history.replaceState(null, "", path);
+    else window.history.pushState(null, "", path);
     setCurrentRoute(route);
   }, []);
 

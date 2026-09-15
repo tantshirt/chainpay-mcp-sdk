@@ -1,14 +1,16 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Arrow } from "../ui/marks";
 import {
   amountLabel,
   pageAllowsSuccessChrome,
   publicReceiptPath,
+  publicReceiptUrl,
   receiptStamps,
   type PublicReceiptPageState,
   type ReceiptView,
 } from "./model";
 import "./receipt-card.css";
+import { printReceipt } from "./print";
 import { sharePublicReceipt, shareStatusCopy } from "./share";
 
 function Field({ label, value }: { label: string; value: string }) {
@@ -56,6 +58,8 @@ export function ReceiptCard({
   onShare?: () => void;
   shareMode?: "public" | "dashboard";
 }) {
+  const cardRef = useRef<HTMLElement>(null);
+  const receiptUrl = publicReceiptUrl(receipt.address, typeof window !== "undefined" ? window.location.origin : "");
   const [shareMessage, setShareMessage] = useState("");
   const amount = amountLabel(receipt.amount);
   const stamps = receiptStamps(receipt);
@@ -75,7 +79,8 @@ export function ReceiptCard({
   }
 
   return (
-    <article className="receipt-card" data-paid="yes">
+    <article ref={cardRef} className="receipt-card" data-paid="yes">
+      <p className="receipt-brand">ChainPay</p>
       <div className="receipt-card-heading">
         <div>
           <span className="section-kicker">PAYMENT RECEIPT</span>
@@ -90,6 +95,12 @@ export function ReceiptCard({
         </div>
         <span className="receipt-card-network">Solana Devnet</span>
       </div>
+      <dl className="receipt-summary">
+        <Field label="Agent signing address" value={receipt.agent} />
+        <Field label="Recipient token account" value={receipt.recipientTokenAccount} />
+        <Field label="Executed slot" value={receipt.executedAtSlot} />
+        <Field label="Spending permission" value={receipt.mandate} />
+      </dl>
       <div className="receipt-stamps">
         {stamps.map((stamp) => (
           <div className={`receipt-stamp receipt-stamp-${stamp.tone}`} key={stamp.key} data-stamp={stamp.key} data-tone={stamp.tone}>
@@ -112,12 +123,9 @@ export function ReceiptCard({
           <Field label="Mandate" value={receipt.mandate} />
           <Field label="Mint" value={receipt.mint} />
           <Field label="Source token account" value={receipt.sourceTokenAccount} />
-          <Field label="Recipient token account" value={receipt.recipientTokenAccount} />
-          <Field label="Agent" value={receipt.agent} />
           <Field label="Invoice hash" value={receipt.invoiceHash} />
           <Field label="Payment ID" value={receipt.paymentId} />
           <Field label="Signature reference" value={receipt.signatureReference} />
-          <Field label="Executed slot" value={receipt.executedAtSlot} />
           <Field label="On-chain status" value={receipt.onChainStatus} />
           <Field label="Bump" value={receipt.bump} />
           {receipt.transactionSignature && <Field label="Activity signature" value={receipt.transactionSignature} />}
@@ -130,7 +138,11 @@ export function ReceiptCard({
         <a className="button button-secondary-light button-small" href={publicReceiptPath(receipt.address)}>
           Open public receipt <Arrow />
         </a>
+        <button type="button" className="button button-secondary-light button-small" onClick={() => { if (cardRef.current) printReceipt(cardRef.current); }}>
+          Print / Save as PDF
+        </button>
       </div>
+      <p className="receipt-public-url">Public receipt: <a href={receiptUrl}>{receiptUrl}</a></p>
       {shareMessage && <p className="receipt-share-status" role="status">{shareMessage}</p>}
     </article>
   );
