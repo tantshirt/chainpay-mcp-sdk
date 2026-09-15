@@ -1,3 +1,5 @@
+#[path = "server_delivery.rs"]
+mod delivery_routes;
 #[path = "server_recovery.rs"]
 mod recovery;
 #[path = "server_transactions.rs"]
@@ -39,8 +41,9 @@ use crate::{
         ManagedSignerChallengeRequest, ManagedSignerChallengeResponse,
         ManagedSignerProvisionRequest, PaymentRequestVerificationResponse,
         PaymentSubmissionRequest, SignedPaymentRequest, TransactionSubmissionRequest,
-        X402PaymentMetadata, X402ProofRequest,
+        TrustedSellerPublicConfig, X402PaymentMetadata, X402ProofRequest,
     },
+    delivery::TrustedSellerMapping,
     rpc::{LatestBlockhash, RpcAccount, RpcClient, RpcConfig, RpcError},
     signer::{PrivySignerProvider, SignerConfigError, SignerProviderError},
     status::{
@@ -67,6 +70,7 @@ pub struct BackendConfig {
     pub rpc: RpcConfig,
     pub auth_token: String,
     pub allowed_origins: Vec<String>,
+    pub trusted_sellers: Vec<TrustedSellerMapping>,
 }
 
 #[derive(Debug, Error)]
@@ -79,6 +83,8 @@ pub enum ConfigError {
     InvalidDuration(String),
     #[error("invalid status store configuration: {0}")]
     Storage(#[from] StorageError),
+    #[error("invalid trusted seller configuration: {0}")]
+    InvalidTrustedSellers(String),
 }
 
 impl BackendConfig {
@@ -121,6 +127,8 @@ impl BackendConfig {
             },
             auth_token: std::env::var("CHAINPAY_HTTP_AUTH_TOKEN").unwrap_or_default(),
             allowed_origins,
+            trusted_sellers: crate::delivery::trusted_sellers_from_env()
+                .map_err(ConfigError::InvalidTrustedSellers)?,
         })
     }
 
@@ -301,6 +309,14 @@ pub fn build_router(state: BackendState) -> Router {
             "/v1/receipts/{receipt_address}",
             get(get_payment_by_receipt),
         )
+        .route(
+            "/v1/delivery-attestations",
+            post(delivery_routes::create_delivery_attestation),
+        )
+        .route(
+            "/v1/delivery-attestations/{receipt_address}",
+            get(delivery_routes::get_delivery_attestation),
+        )
         .route("/v1/x402-payments/proof", post(record_x402_proof))
         .route("/v1/transactions/submit", post(submit_transaction))
         .route("/v1/transactions/{transaction_id}", get(get_transaction))
@@ -378,6 +394,7 @@ async fn auth_middleware(
                 | "/v1/auth/challenge"
                 | "/v1/auth/session"
         )
+        || delivery_routes::is_public_delivery_path(request.method(), path)
     {
         let mut response = next.run(request).await;
         response
@@ -444,6 +461,17 @@ async fn config(State(state): State<BackendState>) -> Json<BackendConfigResponse
         cluster: state.config.cluster,
         program_id: state.config.program_id.clone(),
         rpc_proxy: "/rpc",
+        trusted_sellers: state
+            .config
+            .trusted_sellers
+            .iter()
+            .map(|mapping| TrustedSellerPublicConfig {
+                cluster: mapping.cluster.clone(),
+                program_id: mapping.program_id.clone(),
+                sellers: mapping.sellers.clone(),
+                recipient_token_account: mapping.recipient_token_account.clone(),
+            })
+            .collect(),
     })
 }
 
