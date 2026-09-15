@@ -79,7 +79,15 @@ test("builds Anchor-compatible mandate and payment instruction shapes", () => {
   assert.equal(payment.name, "execute_payment");
   assert.equal(payment.keys.length, 10);
   assert.equal(payment.data.length, 112);
-  assert.equal(deriveReceiptAddress(mandateAddress, request.invoiceHash).length, 44);
+  // A base58-encoded 32-byte address is 43 or 44 characters. 44 needs a value of
+  // at least 58^43 (about 2^251.9), so roughly 5.7% of 32-byte values encode to
+  // 43 — measured at 5.4% over 20,000 derivations. Both inputs here come from
+  // Keypair.generate(), so asserting exactly 44 failed about one run in 19, with
+  // no relation to any change under test. Assert the property that matters: it
+  // decodes back to 32 bytes.
+  const receiptAddress = deriveReceiptAddress(mandateAddress, request.invoiceHash);
+  assert.equal(new PublicKey(receiptAddress).toBytes().length, 32);
+  assert.equal(new PublicKey(receiptAddress).toBase58(), receiptAddress);
 });
 
 test("keeps legacy mandate derivation available while scoping new mandates by mint", () => {
