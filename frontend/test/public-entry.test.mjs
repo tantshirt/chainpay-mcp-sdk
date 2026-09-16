@@ -92,6 +92,56 @@ test("AppShell does not statically import wallet connect or SDK client", async (
   assert.match(source, /lazy\(\(\) => import\("\.\/verify\/VerifyPage"\)\)/);
 });
 
+test("a component stylesheet does not restyle the whole app", async () => {
+  // record-details.css is imported by RecordDetails.tsx. App-wide selectors in it
+  // took effect the moment that component was imported, so one panel restyled the
+  // dashboard background, sidebar, card radius and mandate table everywhere.
+  // Those rules were app-level intent and now live in styles.css.
+  const scoped = await readFile(resolve(root, "ui/record-details.css"), "utf8");
+  const appWide = scoped
+    .split("\n")
+    .filter((line) => /^\s*\.cp-app[\s.]/.test(line));
+  assert.deepEqual(appWide, [], "app-wide rules belong in styles.css, not a component stylesheet");
+
+  // Every selector must be the panel/page root or a descendant of it.
+  const selectors = scoped
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .split("}")
+    .map((block) => block.split("{")[0].trim())
+    .filter((selector) => selector && !selector.startsWith("@") && !selector.startsWith("--"));
+  for (const selector of selectors) {
+    for (const part of selector.split(",").map((value) => value.trim()).filter(Boolean)) {
+      assert.match(
+        part,
+        /^\.cp-(record|permission)-/,
+        `"${part}" is not scoped to the record panel`,
+      );
+    }
+  }
+});
+
+test("the animation libraries stay out of the every-route chunk", async () => {
+  // LandingPage is imported eagerly by AppShell, so a static `import { gsap }`
+  // in this hook puts gsap, ScrollTrigger and Lenis — about 120 kB — into a
+  // chunk that loads on every route, /verify/<pda> included. That page has no
+  // animation and exists for people with no wallet.
+  const source = await readFile(resolve(root, "landing/useLandingMotion.ts"), "utf8");
+
+  for (const bare of ['from "gsap"', 'from "gsap/ScrollTrigger"', 'from "lenis"']) {
+    const statik = new RegExp(`^\\s*import\\s+(?!type\\b)[^\\n]*${bare.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`, "m");
+    assert.equal(statik.test(source), false, `static import of ${bare} would ship it on every route`);
+  }
+
+  for (const lazy of ["gsap", "gsap/ScrollTrigger", "lenis"]) {
+    assert.match(source, new RegExp(`import\\("${lazy.replace("/", "\\/")}"\\)`));
+  }
+
+  // Unmounting before the chunk lands must not leave triggers and a ticker that
+  // nothing reverts.
+  assert.match(source, /if \(disposed \|\| !root\.current\) return;/);
+  assert.match(source, /media\?\.revert\(\)/);
+});
+
 test("the verify route renders without mounting WalletController", async () => {
   // /verify/<pda> is the page a finance reader opens with no wallet. Lazy-loading
   // WalletController is not enough if the shell mounts it on every route: the

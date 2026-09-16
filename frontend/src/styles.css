@@ -50,10 +50,6 @@ h1, h2, h3 { color: var(--ink); }
 /* Shared editorial navigation */
 .topbar { min-height: 64px; display: flex; align-items: center; gap: 36px; }
 .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); font-size: 21px; font-weight: 600; letter-spacing: -1px; }
-.brand > span:last-child > span { color: var(--blue); }
-.brand-mark { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 8px; background: var(--blue); transform: none; }
-.brand-mark span { width: 12px; height: 12px; position: relative; border: 2px solid #fff; border-radius: 50%; }
-.brand-mark span::after { content: ''; position: absolute; top: 1px; left: 1px; width: 5px; height: 5px; border-radius: 50%; background: #fff; }
 .main-nav { display: flex; align-items: center; gap: 28px; margin-left: auto; }
 .main-nav a, .login-link { color: var(--body); font-size: 14px; font-weight: 500; transition: color .18s ease; }
 .main-nav a:hover, .login-link:hover { color: var(--blue); }
@@ -1655,7 +1651,6 @@ h1 em, h2 em { color: var(--blue); font-style: normal; }
 .dashboard-sidebar { width: 232px; padding: 20px 14px; }
 .dashboard-sidebar-brand { padding: 4px 10px 16px; }
 .dashboard-sidebar-brand .brand { font-size: 18px; }
-.dashboard-sidebar-brand .brand-mark { width: 26px; height: 26px; }
 .dashboard-nav { display: grid; gap: 2px; }
 .side-link { width: 100%; border: 0; background: transparent; text-align: left; }
 .side-link > span:not(.sidebar-glyph) { width: auto; text-align: left; }
@@ -2273,3 +2268,28 @@ h1 em, h2 em { color: var(--blue); font-style: normal; }
   .case-feedback-message > div:first-child { grid-template-columns: 36px minmax(0, 1fr); }
   .case-feedback-message em { grid-column: 2; justify-self: start; }
 }
+
+/*
+ * Dashboard surface refinements from the record-detail design pass.
+ *
+ * These are app-wide rules and previously lived in ui/record-details.css, which
+ * is imported by RecordDetails.tsx. That meant importing one panel component
+ * restyled the whole dashboard — background, sidebar, card radius and the
+ * mandate table — for every route that pulled it in. The intent was always
+ * app-level, so they belong here.
+ *
+ * The literals below are the landing palette (landing.css:294), not the tokens
+ * declared at the top of this file. Kept as-is to preserve the design exactly;
+ * unifying the two palettes is a design decision, not a mechanical swap.
+ */
+.cp-app .dashboard-main { background: #f7f9fc; }
+.cp-app .dashboard-sidebar { background: var(--canvas); border-inline-end: 1px solid #dbe2ef; }
+.cp-app .dashboard-card { border-radius: var(--radius-container, 24px); }
+.cp-app .mandate-table th { background: #fafbfe; }
+.cp-app .mandate-table td { padding-block: 20px; }
+.cp-app .mandate-agent-cell strong { font-size: 14px; }
+.cp-app .mandate-amount-line { flex-wrap: wrap; font-variant-numeric: tabular-nums; }
+.cp-app .mandate-table-actions .xds-button { min-width: 76px; }
+.cp-app .mandate-table tbody tr:focus-visible { outline: 3px solid var(--blue); outline-offset: -3px; }
+.cp-app .mandate-table-status.expired { color: #56647d; background: #f0f2f6; }
+.cp-app .mandate-table-status.expired .mandate-status-check { color: #56647d; background: transparent; }
