@@ -1,0 +1,119 @@
+# Support watchdog. Runs from this fork only, so the people who deploy the
+# site can't edit or switch off the check on it.
+#
+# Two jobs, on purpose:
+#   inspect: loads the live (possibly hostile) page. Has NO secrets.
+#   alert:   reads only the JSON verdict. Holds the email/Telegram secrets.
+#
+# Repo variables (public values): SUPPORT_SITE_URL, SUPPORT_PROGRAM_ID, SUPPORT_VAULT,
+#   SUPPORT_VAULT_USDC, SUPPORT_RECIPIENT_A, SUPPORT_RECIPIENT_B, SUPPORT_RPC_URL (public RPC)
+# Repo secrets: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_IDS (comma-separated, both maintainers),
+#   SMTP_SERVER, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD, ALERT_EMAILS (comma-separated),
+#   HEALTHCHECK_PING_URL (healthchecks.io: emails you if pings STOP, i.e. the watchdog went quiet)
+#
+# GitHub may delay or skip scheduled runs, and disables them after 60 days without
+# repo activity. The heartbeat exists for exactly that.
+name: support-watchdog
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: support-watchdog
+  cancel-in-progress: false
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install
+        working-directory: watchdog
+        run: npm install --no-audit --no-fund && npx playwright install --with-deps chromium
+      - name: Check page and chain
+        working-directory: watchdog
+        env:
+          SUPPORT_SITE_URL: ${{ vars.SUPPORT_SITE_URL }}
+          SUPPORT_PROGRAM_ID: ${{ vars.SUPPORT_PROGRAM_ID }}
+          SUPPORT_VAULT: ${{ vars.SUPPORT_VAULT }}
+          SUPPORT_VAULT_USDC: ${{ vars.SUPPORT_VAULT_USDC }}
+          SUPPORT_RECIPIENT_A: ${{ vars.SUPPORT_RECIPIENT_A }}
+          SUPPORT_RECIPIENT_B: ${{ vars.SUPPORT_RECIPIENT_B }}
+          SUPPORT_RPC_URL: ${{ vars.SUPPORT_RPC_URL }}
+          VERDICT_PATH: verdict.json
+        run: node support-watchdog.mjs || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: verdict
+          path: watchdog/verdict.json
+          if-no-files-found: ignore
+          retention-days: 7
+
+  alert:
+    needs: inspect
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: verdict
+      - name: Read verdict
+        id: verdict
+        run: |
+          if [ -f verdict.json ] && [ "$(jq -r .ok verdict.json)" = "true" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            if [ -f verdict.json ]; then
+              jq -r '"- " + (.problems | join("\n- "))' verdict.json > summary.txt
+            else
+              echo "- The watchdog didn't produce a verdict (inspect job failed)." > summary.txt
+            fi
+          fi
+      - name: Heartbeat
+        if: steps.verdict.outputs.ok == 'true'
+        env:
+          URL: ${{ secrets.HEALTHCHECK_PING_URL }}
+        run: '[ -z "$URL" ] || curl -fsS -m 10 --retry 3 "$URL" > /dev/null'
+      - name: Telegram
+        if: steps.verdict.outputs.ok != 'true'
+        env:
+          TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHATS: ${{ secrets.TELEGRAM_CHAT_IDS }}
+          RUN: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          [ -n "$TOKEN" ] || exit 0
+          text="ChainPay support watchdog: check failed. Don't send to /support until this is explained.
+          $(cat summary.txt)
+          $RUN"
+          IFS=',' read -ra ids <<< "$CHATS"
+          for id in "${ids[@]}"; do
+            curl -fsS -m 10 "https://api.telegram.org/bot${TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${id}" --data-urlencode "text=${text}" > /dev/null
+          done
+      - name: Email
+        if: steps.verdict.outputs.ok != 'true' && env.HAS_SMTP == 'true'
+        env:
+          HAS_SMTP: ${{ secrets.SMTP_SERVER != '' }}
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          to: ${{ secrets.ALERT_EMAILS }}
+          from: ChainPay watchdog
+          subject: "ChainPay support watchdog: check failed"
+          body: file://summary.txt

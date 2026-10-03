@@ -1,0 +1,10 @@
+{
+  "name": "chainpay-support-watchdog",
+  "private": true,
+  "type": "module",
+  "description": "Checks the live /support page and the splitter on-chain. Lives only in Dre's fork.",
+  "dependencies": {
+    "@solana/web3.js": "1.98.4",
+    "playwright": "1.63.0"
+  }
+}
