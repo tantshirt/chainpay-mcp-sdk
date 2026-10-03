@@ -64,6 +64,8 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    env:
+      HAS_SMTP: ${{ secrets.SMTP_SERVER != '' }}
     steps:
       - uses: actions/download-artifact@v4
         continue-on-error: true
@@ -105,8 +107,6 @@ jobs:
           done
       - name: Email
         if: steps.verdict.outputs.ok != 'true' && env.HAS_SMTP == 'true'
-        env:
-          HAS_SMTP: ${{ secrets.SMTP_SERVER != '' }}
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: ${{ secrets.SMTP_SERVER }}
