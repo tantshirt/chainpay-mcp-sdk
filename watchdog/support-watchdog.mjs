@@ -9,7 +9,7 @@
 // Output: verdict JSON on stdout and in $VERDICT_PATH (default ./verdict.json).
 import { writeFileSync } from "node:fs";
 import { chromium } from "playwright";
-import { Connection, Keypair, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
+import { ComputeBudgetProgram, Connection, Keypair, PublicKey, SystemProgram, Transaction, VersionedTransaction } from "@solana/web3.js";
 import { createHash } from "node:crypto";
 
 const env = process.env;
@@ -102,6 +102,41 @@ function fakeRpc(route) {
   }
 }
 
+const MAINNET_USDC = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+const JUPITER = "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4";
+const ATA_PROGRAM = "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL";
+
+// "Other token" tips: a v0 transaction where Jupiter swaps into the vault's USDC
+// account, then memo + allocate_usdc. Lookup tables are resolved on-chain.
+async function assertSwapContribution(bytes) {
+  const label = "swap contribution";
+  const tx = VersionedTransaction.deserialize(Uint8Array.from(bytes));
+  const rpc = new Connection(env.SUPPORT_RPC_URL, "confirmed");
+  const tables = (await Promise.all(tx.message.addressTableLookups.map((l) => rpc.getAddressLookupTable(l.accountKey)))).map((r) => r.value).filter(Boolean);
+  const keys = tx.message.getAccountKeys({ addressLookupTableAccounts: tables });
+  const ixs = tx.message.compiledInstructions.map((ix) => ({
+    program: keys.get(ix.programIdIndex).toBase58(),
+    accounts: ix.accountKeyIndexes.map((i) => ({ key: keys.get(i).toBase58(), writable: tx.message.isAccountWritable(i) })),
+    data: ix.data,
+  }));
+  const allowed = new Set([ComputeBudgetProgram.programId.toBase58(), ATA_PROGRAM, JUPITER, TOKEN, MEMO, PROGRAM]);
+  for (const ix of ixs) if (!allowed.has(ix.program)) fail(`${label}: unexpected program ${ix.program}`);
+  const swaps = ixs.filter((ix) => ix.program === JUPITER);
+  if (swaps.length !== 1) fail(`${label}: expected exactly one Jupiter swap, got ${swaps.length}`);
+  else if (!swaps[0].accounts.some((a) => a.key === VAULT_USDC && a.writable)) fail(`${label}: swap doesn't deliver to the vault's USDC account`);
+  const [memo, allocate] = ixs.slice(-2);
+  if (memo?.program !== MEMO) fail(`${label}: second-to-last instruction is not the memo`);
+  const expected = disc("allocate_usdc");
+  if (allocate?.program !== PROGRAM || !expected.every((b, i) => allocate.data[i] === b)) fail(`${label}: last instruction is not allocate_usdc`);
+  else if (allocate.accounts[0]?.key !== VAULT) fail(`${label}: allocate targets the wrong vault`);
+  for (const ix of ixs.filter((ix) => ix.program === TOKEN)) {
+    // Only closing the donor's own temporary account, with lamports back to the donor.
+    if (ix.data[0] !== 9 || ix.accounts[1]?.key !== fakeOwner) fail(`${label}: token instruction other than closing the donor's own account`);
+  }
+  const signers = keys.staticAccountKeys.slice(0, tx.message.header.numRequiredSignatures).map((k) => k.toBase58());
+  if (signers.some((s) => s !== fakeOwner)) fail(`${label}: asks for an unexpected signer`);
+}
+
 function assertContribution(bytes, asset) {
   const tx = Transaction.from(Buffer.from(bytes));
   const ixs = tx.instructions;
@@ -155,9 +190,25 @@ async function checkPage() {
       await page.getByRole("button", { name: /^Send / }).click();
       await page.waitForFunction((n) => window.__captured.length >= n, asset === "SOL" ? 1 : 2, { timeout: 20_000 });
     }
+    // Any-token tips exist on mainnet only (Jupiter doesn't route on devnet).
+    const swapCheck = USDC_MINT === MAINNET_USDC;
+    if (swapCheck) {
+      await page.getByRole("button", { name: "Back" }).click();
+      await page.getByRole("button", { name: "Other", exact: true }).click();
+      await page.locator(".token-row", { hasText: "USDT" }).first().click({ timeout: 20_000 });
+      await page.locator(".tip-amount input").fill("5");
+      await page.locator(".tip-usd", { hasText: "arrives" }).waitFor({ timeout: 20_000 });
+      await page.getByRole("button", { name: "Continue" }).click();
+      await page.getByRole("button", { name: /^Send / }).click();
+      await page.waitForFunction(() => window.__captured.length >= 3 || document.querySelector(".tip-error"), null, { timeout: 30_000 });
+      // The fake wallet refuses to sign, so an error after a capture is expected.
+      const swapCaptured = await page.evaluate(() => window.__captured.length >= 3);
+      if (!swapCaptured) fail(`swap flow never reached signing: ${await page.locator(".tip-error").first().innerText().catch(() => "no message")}`);
+    }
     const captured = await page.evaluate(() => window.__captured);
     assertContribution(captured[0], "SOL");
     assertContribution(captured[1], "USDC");
+    if (swapCheck && captured[2]) await assertSwapContribution(captured[2]);
   } finally {
     await browser.close();
   }
