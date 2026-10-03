@@ -138,23 +138,21 @@ async function checkPage() {
     await page.route(/solana\.com|helius|rpc/i, fakeRpc);
     await page.goto(new URL("/support", env.SUPPORT_SITE_URL).toString(), { waitUntil: "networkidle" });
 
-    const html = await page.content();
-    if (!html.includes(PROGRAM.slice(0, 4))) fail("page doesn't show the pinned program");
+    // The page links the vault ("Verify on-chain") and may link recipients; nothing else.
     const links = await page.$$eval("a[href*='/address/']", (as) => as.map((a) => a.getAttribute("href")));
-    for (const pinned of [PROGRAM, VAULT]) {
-      if (!links.some((href) => href.includes(pinned))) fail(`page doesn't link the pinned address ${pinned}`);
-    }
+    if (!links.some((href) => href.includes(VAULT))) fail(`page doesn't link the pinned vault ${VAULT}`);
     const unknown = links.filter((href) => ![PROGRAM, VAULT, env.SUPPORT_RECIPIENT_A, env.SUPPORT_RECIPIENT_B].some((p) => href.includes(p)));
     if (unknown.length) fail(`page links unexpected addresses: ${unknown.join(", ")}`);
 
+    // Stepper: amount -> wallet (first time only) -> review -> Send. The fake
+    // wallet captures the transaction and refuses, so the card stays on review.
     for (const asset of ["SOL", "USDC"]) {
+      if (asset === "USDC") await page.getByRole("button", { name: "Back" }).click();
       await page.getByRole("button", { name: asset, exact: true }).click();
-      await page.getByRole("button", { name: /^(Connect wallet|Send )/ }).click();
-      const picker = page.getByRole("dialog");
-      if (await picker.isVisible().catch(() => false)) {
-        await picker.getByRole("button", { name: /Phantom/ }).first().click();
-        await page.getByRole("button", { name: /^Send / }).click();
-      }
+      await page.getByRole("button", { name: "Continue" }).click();
+      const phantom = page.getByRole("button", { name: /Phantom, detected/ });
+      if (await phantom.isVisible().catch(() => false)) await phantom.click();
+      await page.getByRole("button", { name: /^Send / }).click();
       await page.waitForFunction((n) => window.__captured.length >= n, asset === "SOL" ? 1 : 2, { timeout: 20_000 });
     }
     const captured = await page.evaluate(() => window.__captured);

@@ -2,7 +2,7 @@
 
 It checks, every 15 minutes, that:
 
-- the live `/support` page links only the pinned program, vault and recipient addresses;
+- the live `/support` page links the pinned vault and nothing outside the pinned program, vault and recipient addresses;
 - the transaction the page asks a wallet to sign is exactly `transfer → pinned vault`, `memo`, `allocate(pinned program)`, with no extra signer. It uses a fake wallet that captures the transaction and refuses to sign;
 - on-chain, the program's upgrade authority is still none and the vault's recipients haven't changed.
 
