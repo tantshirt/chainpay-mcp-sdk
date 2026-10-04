@@ -91,7 +91,7 @@ export function OwnerOverview({ mandates, connections, connectionState, attentio
               <span className="cp-row-icon is-info" aria-hidden="true"><Inbox size={18} /></span>
               <span className="cp-row-main"><strong>{item.title || "Payment request"}</strong><small>{item.stage === "waiting_for_approval" ? "Ready for your review" : item.stage === "blocked" ? "Needs attention before it can continue" : "More details needed"}</small></span>
               <Status {...requestStageStatus(item.stage)} />
-              <span className="cp-row-action">Review <ArrowRight size={16} aria-hidden="true" /></span>
+              <span className="cp-row-link">Review <ArrowRight size={16} aria-hidden="true" /></span>
             </button>
           </li>
         ))}
@@ -101,7 +101,7 @@ export function OwnerOverview({ mandates, connections, connectionState, attentio
               <span className="cp-row-icon is-warning" aria-hidden="true"><Clock3 size={18} /></span>
               <span className="cp-row-main"><strong>{mandateDisplayName(mandate, mandates, assets)}</strong><small>Expires within about a day · estimated from slot timing</small></span>
               <Status {...statusFor("review", "Expires soon")} />
-              <span className="cp-row-action">Review <ArrowRight size={16} aria-hidden="true" /></span>
+              <span className="cp-row-link">Review <ArrowRight size={16} aria-hidden="true" /></span>
             </button>
           </li>
         ))}
@@ -198,8 +198,8 @@ export function OwnerOverview({ mandates, connections, connectionState, attentio
                   <span className="cp-row-main"><strong>{row.label}</strong></span>
                   <Status {...activityStatus(row)} />
                   {row.receiptAddress
-                    ? <a className="cp-row-action" href={publicReceiptPath(row.receiptAddress)}>Receipt <ArrowRight size={16} aria-hidden="true" /></a>
-                    : <button type="button" className="cp-row-action" onClick={onRequests}>View request <ArrowRight size={16} aria-hidden="true" /></button>}
+                    ? <a className="cp-row-link" href={publicReceiptPath(row.receiptAddress)}>Receipt <ArrowRight size={16} aria-hidden="true" /></a>
+                    : <button type="button" className="cp-row-link" onClick={onRequests}>View request <ArrowRight size={16} aria-hidden="true" /></button>}
                 </li>
               ))}
             </ul>

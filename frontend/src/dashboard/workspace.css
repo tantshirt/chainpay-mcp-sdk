@@ -155,11 +155,11 @@
 .cp-row-main { flex: 1 1 auto; min-width: 0; }
 .cp-row-main strong { display: block; font: 500 14px/20px Inter, sans-serif; color: var(--ws-ink); overflow-wrap: anywhere; }
 .cp-row-main small { display: block; margin-top: 2px; font: 400 13px/18px Inter, sans-serif; color: var(--ws-ink-secondary); }
-.dashboard-app.cp-app .cp-row-action {
+.dashboard-app.cp-app .cp-row-link {
   display: inline-flex; align-items: center; gap: 6px; flex: none; min-height: 44px; padding: 0 4px;
   border: 0; background: none; color: var(--ws-primary-ink); font: 500 13px/16px Inter, sans-serif; text-decoration: none; cursor: pointer;
 }
-.dashboard-app.cp-app .cp-row-action:hover { text-decoration: underline; text-underline-offset: 3px; }
+.dashboard-app.cp-app .cp-row-link:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 /* --------------------------------------------------------------------------
    Overview
@@ -202,7 +202,7 @@
 
 .cp-overview-columns { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 24px; align-items: start; }
 .cp-overview-stack { display: grid; gap: 24px; min-width: 0; }
-.cp-overview-attention .cp-row-action { margin-left: 4px; }
+.cp-overview-attention .cp-row-link { margin-left: 4px; }
 
 @media (max-width: 1100px) {
   .cp-overview-counts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -220,7 +220,7 @@
   .cp-row-list .cp-row:not(.is-compact) .cp-row-main { flex-basis: calc(100% - 48px); }
   .cp-row-list .cp-row > .cp-status { margin-left: 48px; }
   .cp-row-list .cp-row.is-static > .cp-status { margin-left: 0; }
-  .cp-row-list .cp-row > .cp-row-action { margin-left: auto; }
+  .cp-row-list .cp-row > .cp-row-link { margin-left: auto; }
 }
 @media (prefers-reduced-motion: reduce) {
   .dashboard-app.cp-app :is(.cp-row, .cp-count) { transition: none; }
@@ -391,3 +391,25 @@
 .dashboard-app.cp-app .owner-advanced-settings > summary { min-height: 56px; }
 .dashboard-app.cp-app .owner-advanced-settings > summary strong { font: var(--ws-text-section); }
 .dashboard-app.cp-app .owner-settings-danger { border-color: #efd5d9; }
+
+/* --------------------------------------------------------------------------
+   Cards — shared workspace styling through classes the Cards area already
+   renders. Cards' own stylesheet is untouched; these rules only align its
+   surfaces, type, controls and pills with the workspace layer.
+   -------------------------------------------------------------------------- */
+.dashboard-app.cp-app .cp-cards { gap: 24px; }
+.dashboard-app.cp-app .cp-cards .dashboard-card { border: 1px solid var(--ws-border); border-radius: var(--ws-radius-surface); box-shadow: var(--ws-shadow-surface); }
+.dashboard-app.cp-app .cp-cards .dashboard-card .dashboard-card { box-shadow: none; }
+.dashboard-app.cp-app .cp-card-table th { height: 44px; padding: 0 20px; font: var(--ws-text-label); color: var(--ws-ink-secondary); background: #fafbfd; }
+.dashboard-app.cp-app .cp-card-table td { padding: 16px 20px; font: var(--ws-text-table); color: var(--ws-ink); vertical-align: middle; }
+.dashboard-app.cp-app .cp-card-table td:last-child { text-align: right; }
+.dashboard-app.cp-app .cp-card-name b { font: 500 14px/20px Inter, sans-serif; }
+.dashboard-app.cp-app .cp-card-name small { font: 400 13px/18px Inter, sans-serif; color: var(--ws-ink-secondary); }
+.dashboard-app.cp-app .cp-card-pill { min-height: 24px; padding: 3px 8px; border: 1px solid transparent; border-radius: 999px; font: var(--ws-text-label); }
+.dashboard-app.cp-app .cp-card-pill[data-tone="positive"] { color: var(--ws-positive); background: var(--ws-positive-surface); }
+.dashboard-app.cp-app .cp-card-pill[data-tone="info"] { color: var(--ws-info); background: var(--ws-info-surface); }
+.dashboard-app.cp-app .cp-card-pill[data-tone="warning"] { color: var(--ws-warning); background: var(--ws-warning-surface); }
+.dashboard-app.cp-app .cp-card-pill[data-tone="danger"] { color: var(--ws-critical); background: var(--ws-critical-surface); }
+.dashboard-app.cp-app .cp-card-pill[data-tone="neutral"] { color: var(--ws-neutral); background: var(--ws-neutral-surface); }
+.dashboard-app.cp-app .cp-money { font-variant-numeric: tabular-nums; }
+.dashboard-app.cp-app .cp-unlock { border-radius: 12px; border-color: #cfdcf6; }
