@@ -77,9 +77,46 @@ const MANDATES: Mandate[] = [
     totalLimit: 40_000_000n,
     amountSpent: 40_000_000n,
     paymentCount: 9n,
+    // Past the fixture's current slot (399,999,000), as an expired permission is.
+    expiresAtSlot: 398_500_000n,
     status: "expired",
   }),
 ];
+
+const QUERY = new URLSearchParams(location.search);
+
+// `?mints=multi`: a second token with its own permission, so per-token totals can
+// be seen apart. Not a real PYUSD balance; the mint is a fixture key.
+const PYUSD = "CXk2AMBfi3TwaEL2468s6zP8xq9NxTXjp9gjMgzeUynM";
+if (QUERY.get("mints") === "multi") {
+  MANDATES.push(mandate({
+    address: "MdT5eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    approvedAgent: "AgEnT5555555555555555555555555555555555555555",
+    allowedMint: PYUSD,
+    totalLimit: 1_000_000_000n,
+    amountSpent: 12_340_000n,
+    paymentCount: 4n,
+    expiresAtSlot: 420_000_000n,
+  }));
+}
+
+// `?clear=1`: nothing needs attention. No permission expires within a day and
+// the inbox is empty, so a checked Overview can say so.
+const CLEAR = QUERY.has("clear");
+if (CLEAR) MANDATES[0] = { ...MANDATES[0], expiresAtSlot: 420_000_000n };
+
+// `?revoked=1`: one revoked permission, for the revoked status.
+if (QUERY.has("revoked")) {
+  MANDATES.push(mandate({
+    address: "MdT6ffffffffffffffffffffffffffffffffffffffff",
+    approvedAgent: "AgEnT6666666666666666666666666666666666666666",
+    totalLimit: 60_000_000n,
+    amountSpent: 15_000_000n,
+    paymentCount: 2n,
+    status: "revoked",
+    revoked: true,
+  }));
+}
 
 const STABLECOINS = [{
   value: USDC,
@@ -87,7 +124,13 @@ const STABLECOINS = [{
   label: "USDC",
   detail: "Devnet fixture",
   tokenProgram: "spl-token" as const,
-}];
+}, ...(QUERY.get("mints") === "multi" ? [{
+  value: PYUSD,
+  mint: PYUSD,
+  label: "PYUSD",
+  detail: "Devnet fixture",
+  tokenProgram: "spl-token" as const,
+}] : [])];
 
 const TOOLS = [
   { name: "create_mandate", description: "Create an on-chain spending permission for an agent.", inputSchema: { type: "object", properties: { maxPerPayment: { type: "string" } } } },
@@ -121,17 +164,20 @@ if (new URLSearchParams(location.search).has("ready")) {
   };
 }
 
-const QUERY = new URLSearchParams(location.search);
-
 // `?decimals=fixture` feeds the shared mint metadata store from fixture data, so
 // populated amounts can be reviewed while RPC stays blocked. Test-only: the
 // override exists for this harness and is never set by production code. Without
 // it, metadata is unavailable and amounts render "Amount unavailable".
 if (QUERY.get("decimals") === "fixture") {
   setMintMetadataFetcherOverride(async (mint) => {
-    if (mint === USDC) return 6;
+    if (mint === USDC || mint === PYUSD) return 6;
     throw new Error("No fixture decimals for this mint.");
   });
+}
+// `?decimals=unavailable`: every metadata read fails, even where another fixture
+// (`receipts`) stubs the RPC decimals, so the unavailable state is seen on every tab.
+if (QUERY.get("decimals") === "unavailable") {
+  setMintMetadataFetcherOverride(async () => { throw new Error("Fixture: token details unavailable"); });
 }
 
 // `?slot=fixture`: a current slot and slot timing, so expiry can be checked.
@@ -152,6 +198,9 @@ if (FAIL) {
 
 // `?inbox=fixture`: a request waiting for approval, a blocked one and a completed
 // one with its receipt, seeded into the real per-wallet inbox store.
+// The inbox store is per origin and outlives a page load: `empty` and `clear`
+// start from an empty inbox instead of whatever the previous fixture seeded.
+if (QUERY.has("empty") || CLEAR) localStorage.removeItem(`chainpay.ai-inbox.v1:${OWNER}`);
 if (QUERY.get("inbox") === "fixture") {
   const completed = { ...(crossmintInbox[4] as Record<string, unknown>), id: "req-complete", title: "Market data API, October", crossmint: undefined };
   localStorage.setItem(`chainpay.ai-inbox.v1:${OWNER}`, JSON.stringify([waitingRequest, blockedRequest, completed]));
