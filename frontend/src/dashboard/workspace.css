@@ -1356,7 +1356,9 @@ body:has(.dashboard-app) .wallet-asset-popover { position: static; width: 100%; 
 .dashboard-app.cp-app .cp-ledger .mandate-table th:nth-child(2) { width: 27%; }
 .dashboard-app.cp-app .cp-ledger .mandate-table th:nth-child(3) { width: 17%; }
 .dashboard-app.cp-app .cp-ledger .mandate-table th:nth-child(4) { width: 15%; }
-.dashboard-app.cp-app .cp-ledger .mandate-table th:nth-child(5) { width: 13%; }
+.dashboard-app.cp-app .cp-ledger .mandate-table th:nth-child(5) { width: 1%; }
+/* The actions column fits Pause/Resume; Astryx's `max-width: 0` cell trick would let it shrink below the button. */
+.dashboard-app.cp-app .cp-ledger .mandate-table td.mandate-table-actions { max-width: none !important; }
 .dashboard-app.cp-app .cp-ledger .mandate-table tbody tr.is-selected { background: #f7f9ff; }
 .cp-ledger-permission { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .cp-ledger-permission > span { min-width: 0; }

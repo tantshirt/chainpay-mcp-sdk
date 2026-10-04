@@ -271,6 +271,18 @@ section("matrix", async () => {
   }
 });
 
+// 1b. Between the three widths: ledgers and tables switch layout by their own width,
+// so check the widths where a five-column table is tightest.
+section("between", async () => {
+  for (const width of [1180, 1024, 900]) {
+    await page.setViewportSize({ width, height: 1000 });
+    for (const tab of ["mandates", "payments", "assistant", "cards", "agents"]) {
+      await open(`tab=${tab}&${POPULATED}`);
+      await assertClean(`${tab} populated ${width}`);
+    }
+  }
+});
+
 // 2. Failed collections never read as zero or all clear.
 section("failed", async () => {
   for (const width of [1440, 390]) {
