@@ -231,3 +231,50 @@
   .cp-section-header:has(.cp-section-header-text p) .cp-section-header-text { flex: 1 1 100%; }
   .cp-section-header:has(.cp-section-header-text p) .cp-section-header-action { margin-block: 0; }
 }
+
+/* --------------------------------------------------------------------------
+   Spending permissions ledger
+   -------------------------------------------------------------------------- */
+.dashboard-app.cp-app .mandates-panel { margin-top: 0; }
+.cp-ledger-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px 16px; flex-wrap: wrap; margin-bottom: 12px; }
+.dashboard-app.cp-app .cp-ledger-filter { margin: 0; max-width: 100%; overflow-x: auto; }
+.dashboard-app.cp-app .cp-ledger-search { width: min(420px, 100%); flex: 0 1 420px; }
+.dashboard-app.cp-app .cp-ledger-search input { min-height: 44px; font-size: 15px; }
+.dashboard-app.cp-app .cp-ledger-meta { margin: 0 0 12px; font: 400 13px/18px Inter, sans-serif; color: var(--ws-ink-secondary); }
+.dashboard-app.cp-app .cp-ledger-meta span { color: var(--ws-ink-secondary); }
+.dashboard-app.cp-app .cp-ledger-meta span:last-child:not(:first-child) { color: var(--ws-primary-ink); }
+.dashboard-app.cp-app .cp-ledger-search > :first-child { flex: 1 1 auto; min-width: 0; }
+.dashboard-app.cp-app .cp-ledger { padding: 0; overflow: hidden; }
+.dashboard-app.cp-app .cp-ledger .mandate-table { font: var(--ws-text-table); color: var(--ws-ink); }
+.dashboard-app.cp-app .cp-ledger .mandate-table th { height: 44px; padding: 0 20px; font: var(--ws-text-label); color: var(--ws-ink-secondary); text-transform: none; letter-spacing: 0; background: #fafbfd; }
+.dashboard-app.cp-app .cp-ledger .mandate-table td { padding: 16px 20px; vertical-align: middle; }
+.dashboard-app.cp-app .cp-ledger .mandate-table th:nth-child(1) { width: 28%; }
+.dashboard-app.cp-app .cp-ledger .mandate-table th:nth-child(2) { width: 27%; }
+.dashboard-app.cp-app .cp-ledger .mandate-table th:nth-child(3) { width: 17%; }
+.dashboard-app.cp-app .cp-ledger .mandate-table th:nth-child(4) { width: 15%; }
+.dashboard-app.cp-app .cp-ledger .mandate-table th:nth-child(5) { width: 13%; }
+.dashboard-app.cp-app .cp-ledger .mandate-table td[data-label="Status"] .cp-status { white-space: normal; }
+.dashboard-app.cp-app .cp-ledger .mandate-table tbody tr.is-selected { background: #f7f9ff; }
+.cp-ledger-permission { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.cp-ledger-permission > span { min-width: 0; }
+.cp-ledger-permission strong { display: block; font: 500 14px/20px Inter, sans-serif; color: var(--ws-ink); overflow-wrap: anywhere; }
+.cp-ledger-selected { font-weight: 400; color: var(--ws-ink-secondary); }
+.cp-ledger-permission small { display: block; margin-top: 2px; font: 400 13px/18px Inter, sans-serif; color: var(--ws-ink-secondary); }
+.dashboard-app.cp-app .cp-ledger-permission small .mono { font: 400 12px/18px var(--ws-mono); }
+.cp-ledger-amounts { display: grid; gap: 2px; font-variant-numeric: tabular-nums; }
+.cp-ledger-spent { display: inline-flex; align-items: baseline; flex-wrap: wrap; gap: 0 6px; font: 500 14px/20px Inter, sans-serif; color: var(--ws-ink); }
+.cp-ledger-of { color: var(--ws-ink-secondary); font-weight: 400; }
+.cp-ledger-remaining { display: inline-flex; align-items: baseline; flex-wrap: wrap; gap: 0 6px; font: 400 13px/18px Inter, sans-serif; color: var(--ws-ink-secondary); }
+.cp-ledger-remaining .cp-amount { color: var(--ws-ink); }
+.cp-ledger-expiry { font: 400 13px/18px Inter, sans-serif; color: var(--ws-ink-secondary); }
+.dashboard-app.cp-app .cp-ledger .mandate-table-actions .astryx-button { min-width: 96px; }
+.dashboard-app.cp-app .cp-ledger .mandate-table-actions small { display: block; margin-top: 6px; white-space: normal; font-size: 12px; color: var(--ws-ink-secondary); }
+.dashboard-app.cp-app .cp-ledger .mandate-empty-row td { padding: 20px; }
+@media (max-width: 760px) {
+  .cp-ledger-toolbar { align-items: stretch; flex-direction: column; }
+  .dashboard-app.cp-app .cp-ledger-search { width: 100%; flex-basis: auto; }
+  .dashboard-app.cp-app .cp-ledger .mandate-table tbody tr:not(.mandate-empty-row) { padding: 16px; gap: 12px 16px; border-bottom: 1px solid var(--ws-border-soft); }
+  .dashboard-app.cp-app .cp-ledger .mandate-table tbody tr:not(.mandate-empty-row) td[data-label="Expiry"] { grid-column: 1 / -1; justify-content: flex-start; }
+  .dashboard-app.cp-app .cp-ledger .mandate-table tbody tr:not(.mandate-empty-row) td::before { font: var(--ws-text-label); text-transform: none; color: var(--ws-ink-secondary); }
+  .dashboard-app.cp-app .cp-ledger .mandate-table tbody tr:not(.mandate-empty-row) td[data-label="Status"]::before { display: none; }
+}

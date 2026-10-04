@@ -55,8 +55,8 @@ export function Amount({ baseUnits, mint, symbol, showRetry = true, size = "defa
     return (
       <span className={`${classes} is-unavailable`} data-amount-state="unavailable">
         <span className="cp-amount-unavailable">Amount unavailable</span>
-        {showRetry && <button type="button" className="cp-amount-retry" onClick={retry}>Retry</button>}
-        <details className="cp-amount-raw">
+        {showRetry && <button type="button" className="cp-amount-retry" onClick={(event) => { event.stopPropagation(); retry(); }}>Retry</button>}
+        <details className="cp-amount-raw" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
           <summary>raw units</summary>
           <code>{raw}</code>
         </details>
@@ -73,7 +73,7 @@ export function Amount({ baseUnits, mint, symbol, showRetry = true, size = "defa
 }
 
 /** One retry for every unavailable mint in a section. */
-export function MintMetadataNotice({ unavailable, onRetry, symbolFor }: { unavailable: string[]; onRetry: () => void; symbolFor: (mint: string) => string }) {
+export function MintMetadataNotice({ unavailable, onRetry, symbolFor, rawHint = "Raw units are in each amount’s details." }: { unavailable: string[]; onRetry: () => void; symbolFor: (mint: string) => string; rawHint?: string }) {
   if (!unavailable.length) return null;
   const names = unavailable.map(symbolFor).join(", ");
   return (
@@ -81,9 +81,25 @@ export function MintMetadataNotice({ unavailable, onRetry, symbolFor }: { unavai
       <TriangleAlert aria-hidden="true" size={16} />
       <div>
         <strong>{names} token details couldn’t be read</strong>
-        <p>Amounts stay hidden until the token’s decimals load. Raw units are in each amount’s details.</p>
+        <p>Amounts stay hidden until the token’s decimals load. {rawHint}</p>
       </div>
       <button type="button" className="cp-amount-retry is-block" onClick={onRetry}>Retry</button>
     </div>
+  );
+}
+
+/**
+ * Several amounts of one mint whose metadata is unavailable: one message and
+ * one "raw units" disclosure instead of a repeated message per figure.
+ */
+export function AmountsUnavailable({ values, label = "Amounts unavailable", showRaw = true }: { values: [string, bigint | string][]; label?: string; /** Off inside a clickable row whose detail view shows the raw units. */ showRaw?: boolean }) {
+  return (
+    <span className="cp-amount is-unavailable" data-amount-state="unavailable">
+      <span className="cp-amount-unavailable">{label}</span>
+      {showRaw && <details className="cp-amount-raw" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
+        <summary>raw units</summary>
+        <code>{values.map(([name, value]) => `${name} ${value.toString()}`).join(" · ")}</code>
+      </details>}
+    </span>
   );
 }

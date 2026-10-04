@@ -38,12 +38,17 @@ import { Layout, LayoutContent, LayoutFooter } from "@astryxdesign/core/Layout";
 import { Popover } from "@astryxdesign/core/Popover";
 import { RadioList, RadioListItem } from "@astryxdesign/core/RadioList";
 import { Selector } from "@astryxdesign/core/Selector";
+import { SegmentedControl, SegmentedControlItem } from "@astryxdesign/core/SegmentedControl";
 import { Skeleton } from "@astryxdesign/core/Skeleton";
 import { Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from "@astryxdesign/core/Table";
 import { Tab, TabList } from "@astryxdesign/core/TabList";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { useToast } from "@astryxdesign/core/Toast";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
+import { Amount, AmountsUnavailable, MintMetadataNotice } from "../ui/amount/Amount";
+import { Status, mandateStatusProps, statusFor } from "../ui/workspace/Status";
+import { SectionHeader } from "../ui/workspace/SectionHeader";
+import { CollectionState } from "../ui/workspace/CollectionState";
 import { MintMetadataProvider, useCreateMintMetadataStore, useMintMetadata, useMintMetadataMany, useMintMetadataStore } from "../ui/amount/useMintMetadata";
 import { Arrow, Shield, shortAddress } from "../ui/marks";
 import { DashboardMobileNav, DashboardNav } from "./DashboardNav";
@@ -1507,36 +1512,32 @@ export function MandatesPanel({
   return (
     <section className="mandates-panel" aria-labelledby="mandate-table-title">
       <div hidden={Boolean(fullDetailAddress)}>
-      <div className="mandate-filter-controls"><div className="mandate-filter-bar">
-        <RadioList
-          label="Filter permissions"
-          isLabelHidden
-          orientation="horizontal"
-          value={filter}
-          onChange={(value) => setFilter(value as "all" | MandateTableStatus)}
-        >
-          <RadioListItem value="all" label="All" />
-          <RadioListItem value="active" label="Active" />
-          <RadioListItem value="paused" label="Paused" />
-          <RadioListItem value="revoked" label="Revoked" />
-          <RadioListItem value="expired" label="Expired" />
-        </RadioList>
-      </div><div className="mandate-search-group"><TextInput label="Search permissions" isLabelHidden value={mandateSearch} onChange={setMandateSearch} onEnter={() => { if (searchedMandate && document.activeElement instanceof HTMLElement) openRecord(searchedMandate, document.activeElement); }} placeholder="Search permissions…" />{searchedMandate && <Button type="button" variant="secondary" className="mandate-search-action" label="Inspect permission" isDisabled={false} onClick={(event) => openRecord(searchedMandate, event.currentTarget)} />}</div></div>
-      <div className="mandate-list-meta" aria-live="polite">
+      <div className="cp-ledger-toolbar">
+        <SegmentedControl className="cp-segmented cp-ledger-filter" label="Filter permissions" value={filter} onChange={(value) => setFilter(value as "all" | MandateTableStatus)}>
+          <SegmentedControlItem value="all" label="All" />
+          <SegmentedControlItem value="active" label="Active" />
+          <SegmentedControlItem value="paused" label="Paused" />
+          <SegmentedControlItem value="revoked" label="Revoked" />
+          <SegmentedControlItem value="expired" label="Expired" />
+        </SegmentedControl>
+        <div className="mandate-search-group cp-ledger-search"><TextInput label="Search permissions" isLabelHidden value={mandateSearch} onChange={setMandateSearch} onEnter={() => { if (searchedMandate && document.activeElement instanceof HTMLElement) openRecord(searchedMandate, document.activeElement); }} placeholder="Search by name, agent or address" />{searchedMandate && <Button type="button" variant="secondary" className="mandate-search-action" label="Inspect permission" isDisabled={false} onClick={(event) => openRecord(searchedMandate, event.currentTarget)} />}</div>
+      </div>
+      <div className="mandate-list-meta cp-ledger-meta" aria-live="polite">
         <span>Showing {visibleMandates.length} of {filteredMandates.length} {filter === "all" ? "permissions" : `${filter} permissions`}</span>
         {filteredMandates.length > visibleMandates.length && <span>Showing the first {MAX_MANDATES_VISIBLE}. Use the filters to narrow the list.</span>}
         {normalizedSearch && filteredMandates.length === 0 && <span>No permission matches “{mandateSearch}”.</span>}
       </div>
+      <MintMetadataNotice rawHint="Open a permission to see its exact raw units." unavailable={mandateMints.unavailable} onRetry={mandateMints.retryAll} symbolFor={(mint) => stablecoinOptions.find((option) => option.mint === mint)?.label ?? shortAddress(mint)} />
 
-      <div className="mandate-table-shell dashboard-card">
+      <div className="mandate-table-shell cp-surface cp-ledger">
         <div className="mandate-table-scroll">
           <Table className="mandate-table" density="balanced" dividers="rows" hasHover>
             <caption id="mandate-table-title" className="sr-only">Spending permissions</caption>
             <TableHeader>
               <TableRow isHeaderRow>
                 <TableHeaderCell scope="col">Permission</TableHeaderCell>
-                <TableHeaderCell scope="col">Created</TableHeaderCell>
-                <TableHeaderCell scope="col">Amount</TableHeaderCell>
+                <TableHeaderCell scope="col" className="cp-ledger-num">Spent / limit / remaining</TableHeaderCell>
+                <TableHeaderCell scope="col">Expiry</TableHeaderCell>
                 <TableHeaderCell scope="col">Status</TableHeaderCell>
                 <TableHeaderCell scope="col" className="mandate-actions-heading"><span className="sr-only">Actions</span></TableHeaderCell>
               </TableRow>
@@ -1545,35 +1546,38 @@ export function MandatesPanel({
               {visibleMandates.length ? visibleMandates.map((value) => {
                 const status = mandateTableStatus(value.status);
                 const selectedAsset = stablecoinOptions.find((option) => option.mint === value.allowedMint);
-                const decimals = decimalsByMint[value.allowedMint];
-                const progress = value.totalLimit > 0n ? Math.min(100, Number((value.amountSpent * 100n) / value.totalLimit)) : 0;
+                const symbol = selectedAsset?.label ?? "tokens";
+                const remaining = value.totalLimit > value.amountSpent ? value.totalLimit - value.amountSpent : 0n;
                 const selected = mandate?.address === value.address;
                 const expiry = mandateExpiryLabel(value.expiresAtSlot, currentSlot, slotEstimate);
+                const soon = slotEstimate && currentSlot !== null ? estimatedSlotsForDays(1, slotEstimate) : null;
+                const expiringSoon = status === "active" && soon !== null && currentSlot !== null && value.expiresAtSlot > currentSlot && value.expiresAtSlot - currentSlot <= soon;
                 return (
                   <TableRow key={value.address} className={selected ? "is-selected" : undefined} onClick={(event) => { openRecord(value, event.currentTarget); }} onKeyDown={(event) => { if (event.target !== event.currentTarget) return; if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openRecord(value, event.currentTarget); } }} tabIndex={0} aria-label={`Inspect spending permission ${value.address}`} aria-expanded={expandedMandateAddress === value.address}>
                     <TableCell data-label="Agent">
-                      <div className="mandate-agent-cell">
-                        <span className="mandate-agent-avatar">{value.approvedAgent.slice(0, 2)}</span>
-                        <span><strong>{mandateDisplayName(value, mandates, stablecoinOptions)}{selected ? " · Selected" : ""}</strong><small className="mono">Agent {shortAddress(value.approvedAgent)} · Mandate {shortAddress(value.address)}</small></span>
+                      <div className="cp-ledger-permission">
+                        <TokenIcon mint={value.allowedMint} size={28} />
+                        <span><strong>{mandateDisplayName(value, mandates, stablecoinOptions)}{selected ? <span className="cp-ledger-selected"> · Selected</span> : null}</strong><small>Agent <span className="mono">{shortAddress(value.approvedAgent)}</span></small></span>
                       </div>
                     </TableCell>
-                    <TableCell data-label="Date"><div className="mandate-date-cell"><strong>{mandateCreatedLabel(value)}</strong><small className="mono">{expiry}</small></div></TableCell>
-                    <TableCell data-label="Amount" className="mandate-amount-cell">
-                      <div className="mandate-amount-line"><strong>{formatTokenAmount(value.amountSpent, decimals ?? null)}</strong><span>/ {formatTokenAmount(value.totalLimit, decimals ?? null)} {selectedAsset?.label ?? "tokens"}</span></div>
-                      <div className="mandate-spend-bar" aria-label={`${progress}% of mandate spend used`}><span style={{ width: `${progress}%` }} /></div>
-                      <small className="mandate-token-note">{selectedAsset?.detail ?? (value.tokenProgram === "token-2022" ? "Token-2022" : "Classic SPL Token")}</small>
+                    <TableCell data-label="Amount" className="mandate-amount-cell cp-ledger-num">
+                      {mandateMints.states[value.allowedMint]?.status === "unavailable" ? <AmountsUnavailable showRaw={false} values={[["spent", value.amountSpent], ["limit", value.totalLimit], ["remaining", remaining]]} /> : <div className="cp-ledger-amounts">
+                        <span className="cp-ledger-spent"><Amount baseUnits={value.amountSpent} mint={value.allowedMint} showRetry={false} /><span className="cp-ledger-of">of</span><Amount baseUnits={value.totalLimit} mint={value.allowedMint} symbol={symbol} showRetry={false} /></span>
+                        <span className="cp-ledger-remaining">Remaining <Amount baseUnits={remaining} mint={value.allowedMint} symbol={symbol} showRetry={false} /></span>
+                      </div>}
                     </TableCell>
-                    <TableCell data-label="Status"><span className={`mandate-table-status ${status}`}><span className="mandate-status-check">✓</span>{mandateStatusLabel(status)}</span></TableCell>
+                    <TableCell data-label="Expiry"><span className="cp-ledger-expiry">{expiry}</span></TableCell>
+                    <TableCell data-label="Status"><Status {...mandateStatusProps(status, { expiringSoon })} /></TableCell>
                     <TableCell data-label="Actions" className="mandate-table-actions">
                       {(status === "active" || status === "paused") ? <>
                         <Button type="button" variant="secondary" label={status === "paused" ? "Resume" : "Pause"} isDisabled={actionInFlight !== null} onClick={(event) => { event.stopPropagation(); void handleMandateAction(status === "paused" ? "resume" : "pause", value); }} />
-                      </> : <span className="mandate-no-actions">—</span>}
+                      </> : <span className="mandate-no-actions" aria-label="No actions">—</span>}
                       {actionInFlight && actionAddress === value.address && <small role="status">Waiting for wallet or confirmation…</small>}
                     </TableCell>
                   </TableRow>
                 );
               }) : (
-                <TableRow className="mandate-empty-row"><TableCell colSpan={6}><div className="mandate-empty-state"><span className="empty-icon">◇</span><strong>{mandates.length ? `No ${filter} mandates` : "No mandates yet"}</strong><p>{mandates.length ? "Try another status filter." : "Create a mandate to give an agent bounded spending authority."}</p><Button type="button" variant="primary" label="＋ New mandate" isDisabled={false} onClick={() => onCreateOpenChange(true)} /></div></TableCell></TableRow>
+                <TableRow className="mandate-empty-row"><TableCell colSpan={5}><CollectionState state="empty" noun="permissions" title={mandates.length ? (normalizedSearch ? "No permission matches this search" : `No ${filter} permissions`) : "No spending permissions yet"} description={mandates.length ? "Try another filter or search." : "Create a permission to give an agent bounded spending authority."} icon={ShieldCheck} action={mandates.length ? undefined : <Button type="button" variant="primary" label="New permission" icon={<Plus size={18} />} isDisabled={false} onClick={() => onCreateOpenChange(true)} />} /></TableCell></TableRow>
               )}
             </TableBody>
           </Table>
@@ -1586,23 +1590,23 @@ export function MandatesPanel({
       {expandedMandate && <article className="dashboard-card mandate-detail-card" aria-labelledby="mandate-detail-title">
         <div className="mandate-detail-heading">
           <div><span className="section-kicker">MANDATE DETAILS</span><h2 id="mandate-detail-title">{expandedMandateAsset?.label ?? "Selected mandate"}</h2><p>Review the current on-chain limits for this agent.</p></div>
-          <div className="mandate-detail-heading-actions"><span className={`mandate-table-status ${expandedMandateStatus}`}><span className="mandate-status-check">✓</span>{expandedMandate.status === "expired" ? "Expired" : mandateStatusLabel(expandedMandateStatus ?? "revoked")}</span></div>
+          <div className="mandate-detail-heading-actions"><Status {...mandateStatusProps(expandedMandateStatus ?? "unknown")} /></div>
         </div>
         <p className="cp-record-agent"><span>Approved agent</span><strong>{expandedMandate.approvedAgent}</strong></p>
-        {expandedMandateDecimals === undefined && <p className="cp-record-consequences">Showing exact base units until token decimals are available.</p>}
+        {expandedMandateDecimals === undefined && <p className="cp-record-consequences">Amounts appear once the token’s decimals are read. Exact raw units are in each amount’s details.</p>}
         <div className="cp-permission-summary">
-          <div><span>Per-payment limit</span><strong>{formatTokenAmount(expandedMandate.maxPerPayment, expandedMandateDecimals ?? null)} {expandedMandateAsset?.label ?? "tokens"}</strong></div>
-          <div><span>Remaining allowance</span><strong>{formatTokenAmount(expandedMandate.totalLimit > expandedMandate.amountSpent ? expandedMandate.totalLimit - expandedMandate.amountSpent : 0n, expandedMandateDecimals ?? null)} {expandedMandateAsset?.label ?? "tokens"}</strong></div>
+          <div><span>Per-payment limit</span><strong><Amount baseUnits={expandedMandate.maxPerPayment} mint={expandedMandate.allowedMint} symbol={expandedMandateAsset?.label ?? "tokens"} /></strong></div>
+          <div><span>Remaining allowance</span><strong><Amount baseUnits={expandedMandate.totalLimit > expandedMandate.amountSpent ? expandedMandate.totalLimit - expandedMandate.amountSpent : 0n} mint={expandedMandate.allowedMint} symbol={expandedMandateAsset?.label ?? "tokens"} showRetry={false} /></strong></div>
         </div>
-        {(expandedMandate.status === "active" || expandedMandate.status === "paused") && <div className="cp-delegate-status"><span className="section-kicker">SPL DELEGATE</span><p className="builder-intro">Token accounts have one current delegate. Repair approval replaces the delegated allowance with the mandate’s remaining allowance — it does not increment an existing approval and may displace another mandate’s delegate.</p>{delegateLoading ? <p role="status">Reading source token account…</p> : <><div className="mandate-detail-grid"><div><span>Current delegate</span><strong className="mono">{sourceDelegate ? shortAddress(sourceDelegate) : "None"}</strong></div><div><span>Remaining delegated amount</span><strong>{formatTokenAmount(sourceDelegatedAmount, expandedMandateDecimals ?? null)} {expandedMandateAsset?.label ?? "tokens"}</strong></div></div>{(() => {
+        {(expandedMandate.status === "active" || expandedMandate.status === "paused") && <div className="cp-delegate-status"><span className="section-kicker">SPL DELEGATE</span><p className="builder-intro">Token accounts have one current delegate. Repair approval replaces the delegated allowance with the mandate’s remaining allowance — it does not increment an existing approval and may displace another mandate’s delegate.</p>{delegateLoading ? <p role="status">Reading source token account…</p> : <><div className="mandate-detail-grid"><div><span>Current delegate</span><strong className="mono">{sourceDelegate ? shortAddress(sourceDelegate) : "None"}</strong></div><div><span>Remaining delegated amount</span><strong><Amount baseUnits={sourceDelegatedAmount} mint={expandedMandate.allowedMint} symbol={expandedMandateAsset?.label ?? "tokens"} showRetry={false} /></strong></div></div>{(() => {
           const remainingAllowance = expandedMandate.totalLimit > expandedMandate.amountSpent ? expandedMandate.totalLimit - expandedMandate.amountSpent : 0n;
           const needsRepair = sourceDelegate !== expandedMandate.address || sourceDelegatedAmount < remainingAllowance;
-          return needsRepair ? <div className="mandate-detail-actions"><Button type="button" variant="secondary" label={actionInFlight === "update" ? "Waiting for wallet…" : "Repair approval"} isDisabled={actionInFlight !== null || remainingAllowance <= 0n} onClick={() => void repairDelegateApproval(expandedMandate)} /><span className="mandate-detail-note">Approves {formatTokenAmount(remainingAllowance, expandedMandateDecimals ?? null)} to this mandate PDA.</span></div> : <p className="mandate-detail-note">Source token account is delegated to this mandate with enough remaining allowance for future payments.</p>;
+          return needsRepair ? <div className="mandate-detail-actions"><Button type="button" variant="secondary" label={actionInFlight === "update" ? "Waiting for wallet…" : "Repair approval"} isDisabled={actionInFlight !== null || remainingAllowance <= 0n} onClick={() => void repairDelegateApproval(expandedMandate)} /><span className="mandate-detail-note">Approves <Amount baseUnits={remainingAllowance} mint={expandedMandate.allowedMint} symbol={expandedMandateAsset?.label ?? "tokens"} showRetry={false} /> to this mandate PDA.</span></div> : <p className="mandate-detail-note">Source token account is delegated to this mandate with enough remaining allowance for future payments.</p>;
         })()}</>}</div>}
         <div className="mandate-detail-grid">
-          <div><span>Maximum per payment</span><strong>{formatTokenAmount(expandedMandate.maxPerPayment, expandedMandateDecimals ?? null)} {expandedMandateAsset?.label ?? "tokens"}</strong></div>
-          <div><span>Total spending limit</span><strong>{formatTokenAmount(expandedMandate.totalLimit, expandedMandateDecimals ?? null)} {expandedMandateAsset?.label ?? "tokens"}</strong></div>
-          <div><span>Already spent</span><strong>{formatTokenAmount(expandedMandate.amountSpent, expandedMandateDecimals ?? null)} {expandedMandateAsset?.label ?? "tokens"}</strong></div>
+          <div><span>Maximum per payment</span><strong><Amount baseUnits={expandedMandate.maxPerPayment} mint={expandedMandate.allowedMint} symbol={expandedMandateAsset?.label ?? "tokens"} showRetry={false} /></strong></div>
+          <div><span>Total spending limit</span><strong><Amount baseUnits={expandedMandate.totalLimit} mint={expandedMandate.allowedMint} symbol={expandedMandateAsset?.label ?? "tokens"} showRetry={false} /></strong></div>
+          <div><span>Already spent</span><strong><Amount baseUnits={expandedMandate.amountSpent} mint={expandedMandate.allowedMint} symbol={expandedMandateAsset?.label ?? "tokens"} showRetry={false} /></strong></div>
           <div><span>Payment count</span><strong>{expandedMandate.paymentCount.toString()}{expandedMandate.maxPaymentCount === 0n ? " · No limit" : ` of ${expandedMandate.maxPaymentCount.toString()}`}</strong></div>
           <div><span>Cooldown</span><strong>{expandedMandate.cooldownSlots.toString()} slots<small>{expandedMandate.cooldownSlots === 0n ? "No cooldown" : "Minimum slots between payments"}</small></strong></div>
           <div><span>Expiry</span><strong>{expandedMandateExpiry}<small>Slot {expandedMandate.expiresAtSlot.toString()}</small></strong></div>
@@ -1628,6 +1632,7 @@ export function MandatesPanel({
         )}
         <MandateStatement mandate={expandedMandate} decimals={expandedMandateDecimals ?? null} token={expandedMandateAsset?.label ?? "tokens"} expires={expandedMandateExpiry} />
         <details className="cp-record-technical"><summary>Technical identifiers and source account</summary><div className="mandate-detail-grid">
+          <div><span>Created</span><strong>{mandateCreatedLabel(expandedMandate)}</strong></div>
           <div><span>Mandate address</span><button type="button" className="mandate-detail-value" onClick={() => copyValue(expandedMandate.address)} title="Copy mandate address">{expandedMandate.address} ⧉</button></div>
           <div><span>Approved agent</span><button type="button" className="mandate-detail-value" onClick={() => copyValue(expandedMandate.approvedAgent)} title="Copy approved agent">{expandedMandate.approvedAgent} ⧉</button></div>
           <div><span>Owner</span><button type="button" className="mandate-detail-value" onClick={() => copyValue(expandedMandate.owner)} title="Copy owner address">{expandedMandate.owner} ⧉</button></div>
