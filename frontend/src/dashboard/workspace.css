@@ -1553,24 +1553,13 @@ body:has(.dashboard-app) .wallet-asset-popover { position: static; width: 100%; 
 .dashboard-app.cp-app .owner-settings-danger { border-color: #efd5d9; }
 
 /* --------------------------------------------------------------------------
-   Cards — shared workspace styling through classes the Cards area already
-   renders. Cards' own stylesheet is untouched; these rules only align its
-   surfaces, type, controls and pills with the workspace layer.
+   Cards — surface alignment for the Cards area's remaining dashboard-card
+   blocks. Card states use the shared Status; table type, pill tones and the
+   list's scroll wrapper live in cards/cards.css.
    -------------------------------------------------------------------------- */
 .dashboard-app.cp-app .cp-cards { gap: 24px; }
 .dashboard-app.cp-app .cp-cards .dashboard-card { border: 1px solid var(--ws-border); border-radius: var(--ws-radius-surface); box-shadow: var(--ws-shadow-surface); }
 .dashboard-app.cp-app .cp-cards .dashboard-card .dashboard-card { box-shadow: none; }
-.dashboard-app.cp-app .cp-card-table th { height: 44px; padding: 0 20px; font: var(--ws-text-label); color: var(--ws-ink-secondary); background: #fafbfd; }
-.dashboard-app.cp-app .cp-card-table td { padding: 16px 20px; font: var(--ws-text-table); color: var(--ws-ink); vertical-align: middle; }
-.dashboard-app.cp-app .cp-card-table td:last-child { text-align: right; }
-.dashboard-app.cp-app .cp-card-name b { font: 500 14px/20px Inter, sans-serif; }
-.dashboard-app.cp-app .cp-card-name small { font: 400 13px/18px Inter, sans-serif; color: var(--ws-ink-secondary); }
-.dashboard-app.cp-app .cp-card-pill { min-height: 24px; padding: 3px 8px; border: 1px solid transparent; border-radius: 999px; font: var(--ws-text-label); }
-.dashboard-app.cp-app .cp-card-pill[data-tone="positive"] { color: var(--ws-positive); background: var(--ws-positive-surface); }
-.dashboard-app.cp-app .cp-card-pill[data-tone="info"] { color: var(--ws-info); background: var(--ws-info-surface); }
-.dashboard-app.cp-app .cp-card-pill[data-tone="warning"] { color: var(--ws-warning); background: var(--ws-warning-surface); }
-.dashboard-app.cp-app .cp-card-pill[data-tone="danger"] { color: var(--ws-critical); background: var(--ws-critical-surface); }
-.dashboard-app.cp-app .cp-card-pill[data-tone="neutral"] { color: var(--ws-neutral); background: var(--ws-neutral-surface); }
 .dashboard-app.cp-app .cp-money { font-variant-numeric: tabular-nums; }
 .dashboard-app.cp-app .cp-unlock { border-radius: 12px; border-color: #cfdcf6; }
 
@@ -1613,10 +1602,7 @@ body:has(.dashboard-app) .wallet-asset-popover { position: static; width: 100%; 
 @media (prefers-reduced-motion: reduce) {
   .dashboard-app.cp-app *, .dashboard-app.cp-app *::before, .dashboard-app.cp-app *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }
-/* Cards list at narrow widths and 200% zoom: the table scrolls inside its surface instead of widening the page. */
-.dashboard-app.cp-app .cp-cards :is(section, div):has(> .cp-card-table-wrap) { min-width: 0; max-width: 100%; }
-.dashboard-app.cp-app .cp-card-table-wrap { position: relative; max-width: 100%; overflow-x: auto; }
-.dashboard-app.cp-app :is(.cp-card-name, .cp-link-button) { min-height: var(--ws-control-height); }
+.dashboard-app.cp-app .cp-link-button { min-height: var(--ws-control-height); }
 /* Navigation chrome keeps the 14/20 rhythm on whole pixels, so the sticky footer lines up with the viewport edge. */
 .dashboard-app.cp-app :is(.dashboard-sidebar, .dashboard-topbar) { font: 400 14px/20px Inter, sans-serif; }
 .dashboard-app.cp-app .dashboard-sidebar-brand { height: 56px; }

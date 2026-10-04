@@ -39,12 +39,11 @@ async function noOverflow(label) {
   assert.ok(overflow <= 0, `${label}: horizontal overflow ${overflow}px`);
 }
 
-/** Visible interactive controls in the workspace that are shorter than 44px (Cards' own controls are reported separately). */
+/** Visible interactive controls in the workspace, Cards included, that are shorter than 44px. */
 async function shortControls() {
   return page.evaluate(() => {
     const selector = "button, [role='tab'], [role='radio'], select, summary, a.astryx-button, input:not([type='hidden']):not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file'])";
     return [...document.querySelectorAll(`.dashboard-app ${selector.split(", ").join(", .dashboard-app ")}`)]
-      .filter((el) => !el.closest(".cp-cards"))
       .map((el) => ({ el, box: el.getBoundingClientRect(), style: getComputedStyle(el) }))
       .filter(({ el, box, style }) => box.width > 4 && box.height > 0 && style.visibility !== "hidden" && el.offsetParent !== null)
       .filter(({ el, box }) => {
