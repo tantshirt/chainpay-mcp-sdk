@@ -1348,6 +1348,10 @@ export function MandatesPanel({
   const expandedMandateExpiry = expandedMandate
     ? ledgerExpiryLabel(expandedMandate.expiresAtSlot, currentSlot, slotEstimate, { expired: expandedMandate.status === "expired" })
     : "";
+  // The sponsor statement keeps its own wording, slot included ("expires at slot N" / "expires ≈ date").
+  const expandedMandateStatementExpiry = expandedMandate
+    ? mandateExpiryLabel(expandedMandate.expiresAtSlot, currentSlot, slotEstimate)
+    : "";
 
   useEffect(() => {
     let active = true;
@@ -1652,7 +1656,7 @@ export function MandatesPanel({
             </>}
           </div>
         )}
-        <MandateStatement mandate={expandedMandate} decimals={expandedMandateDecimals ?? null} token={expandedMandateAsset?.label ?? "tokens"} expires={expandedMandateExpiry} />
+        <MandateStatement mandate={expandedMandate} decimals={expandedMandateDecimals ?? null} token={expandedMandateAsset?.label ?? "tokens"} expires={expandedMandateStatementExpiry} />
         <details className="cp-record-technical"><summary>Technical identifiers and source account</summary><div className="mandate-detail-grid">
           <div><span>Created</span><strong>{mandateCreatedLabel(expandedMandate)}</strong></div>
           <div><span>Mandate address</span><button type="button" className="mandate-detail-value" onClick={() => copyValue(expandedMandate.address)} title="Copy mandate address">{expandedMandate.address} ⧉</button></div>
