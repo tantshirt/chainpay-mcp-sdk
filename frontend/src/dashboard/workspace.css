@@ -1247,6 +1247,8 @@ body:has(.dashboard-app) .wallet-asset-popover { position: static; width: 100%; 
   border: 0; background: none; color: var(--ws-primary-ink); font: 500 13px/16px Inter, sans-serif; text-decoration: none; cursor: pointer;
 }
 .dashboard-app.cp-app .cp-row-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+/* Section links sit flush with the section's edges, beside the title or stacked under it. */
+.dashboard-app.cp-app .cp-section-link { margin-inline: -4px; }
 
 /* --------------------------------------------------------------------------
    Overview

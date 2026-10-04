@@ -136,7 +136,7 @@ export function OwnerOverview({ mandates, connections, connectionState, attentio
 
       {selected && ring && (
         <section className="cp-surface cp-overview-spending" aria-labelledby="overview-spending-title">
-          <SectionHeader id="overview-spending-title" title="Spending by token" description="Across loaded permissions. Each token is totalled on its own." action={<Button label="Manage permissions" variant="ghost" onClick={onPermissions} />} />
+          <SectionHeader id="overview-spending-title" title="Spending by token" description="Across loaded permissions. Each token is totalled on its own." action={<SectionLink label="Manage permissions" onClick={onPermissions} />} />
           {totals.length > 1 && (
             <SegmentedControl className="cp-segmented" label="Token" value={selected.mint} onChange={setSelectedMint}>
               {totals.map((total) => <SegmentedControlItem key={total.mint} value={total.mint} label={symbol(total.mint)} />)}
@@ -195,7 +195,7 @@ export function OwnerOverview({ mandates, connections, connectionState, attentio
 
       <div className="cp-overview-columns">
         <section className="cp-surface" aria-labelledby="overview-activity-title">
-          <SectionHeader id="overview-activity-title" title="Recent activity" description="Requests and payments from this browser." action={<Button label="View payments" variant="ghost" onClick={onPayments} />} />
+          <SectionHeader id="overview-activity-title" title="Recent activity" description="Requests and payments from this browser." action={<SectionLink label="View payments" onClick={onPayments} />} />
           <CollectionState state={activity.length ? "loaded" : "empty"} noun="activity" title="No activity yet" description="Requests and payments will appear here as your agents work." compact>
             <ul className="cp-row-list">
               {activity.slice(0, 6).map((row) => (
@@ -213,7 +213,7 @@ export function OwnerOverview({ mandates, connections, connectionState, attentio
 
         <div className="cp-overview-stack">
           <section className="cp-surface" aria-labelledby="overview-agents-title">
-            <SectionHeader id="overview-agents-title" title="Agents" action={<Button label="View agents" variant="ghost" onClick={onAgents} />} />
+            <SectionHeader id="overview-agents-title" title="Agents" action={<SectionLink label="View agents" onClick={onAgents} />} />
             <CollectionState
               state={connectionState} noun="agents" compact rows={2}
               description={connectionState === "signed-out" ? "Agent connections load after you sign in. Signing in is not a spending approval." : connectionState === "failed" ? "Agent connections couldn’t be refreshed." : "Connect an agent to use your spending permissions."}
@@ -236,7 +236,7 @@ export function OwnerOverview({ mandates, connections, connectionState, attentio
           </section>
 
           <section className="cp-surface" aria-labelledby="overview-cards-title">
-            <SectionHeader id="overview-cards-title" title={cards.illustrative ? <>Cards <span className="cp-illustrative-tag" data-testid="overview-cards-illustrative">Illustrative</span></> : "Cards"} description={cards.illustrative ? "Example cards. Nothing here is real money or a real card." : undefined} action={<Button label="View cards" variant="ghost" onClick={onCards} />} />
+            <SectionHeader id="overview-cards-title" title={cards.illustrative ? <>Cards <span className="cp-illustrative-tag" data-testid="overview-cards-illustrative">Illustrative</span></> : "Cards"} description={cards.illustrative ? "Example cards. Nothing here is real money or a real card." : undefined} action={<SectionLink label="View cards" onClick={onCards} />} />
             {cards.state === "loaded" ? (
               <ul className="cp-row-list">
                 {cards.summary.lifecycle.map((row) => (
@@ -261,6 +261,11 @@ export function OwnerOverview({ mandates, connections, connectionState, attentio
       </div>
     </div>
   );
+}
+
+/** Navigation out of a section: the same blue link-with-arrow as the row actions. */
+function SectionLink({ label, onClick }: { label: string; onClick: () => void }) {
+  return <button type="button" className="cp-row-link cp-section-link" onClick={onClick}>{label} <ArrowRight size={16} aria-hidden="true" /></button>;
 }
 
 function CountTile({ icon, label, value, detail, loading = false, onClick }: { icon: ReactNode; label: string; value: number | null; detail: string; loading?: boolean; onClick: () => void }) {
