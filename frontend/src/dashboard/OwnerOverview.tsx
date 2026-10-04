@@ -107,6 +107,7 @@ export function OwnerOverview({ mandates, connections, connectionState, attentio
         ))}
       </ul>
       {attention.length > 5 && <Button label={`View all ${attention.length} requests`} variant="ghost" onClick={onRequests} />}
+      {!expiryChecked && !expiryPending && <p className="cp-caption" role="status"><Status {...statusFor("unknown", "Expiry not checked")} /> Permission expiry couldn’t be checked right now, so an expiring permission may be missing from this list.</p>}
     </section>
   );
 
