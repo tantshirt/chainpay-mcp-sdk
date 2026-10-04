@@ -1212,6 +1212,11 @@ body:has(.dashboard-app) .wallet-asset-popover { position: static; width: 100%; 
 .dashboard-app.cp-app .cp-amount-raw > :not(summary) { margin-top: 4px; }
 .cp-amount-raw summary { display: inline-flex; align-items: center; min-height: 24px; cursor: pointer; font: 500 12px/16px Inter, sans-serif; color: var(--ws-ink-secondary); }
 .dashboard-app.cp-app .cp-amount-raw summary { min-height: 24px; font-size: 12px; }
+.cp-amount-raw > summary { gap: 4px; list-style: none; }
+.cp-amount-raw > summary::-webkit-details-marker { display: none; }
+.cp-amount-raw-cue { flex: none; transition: transform var(--ws-duration-press) var(--ws-ease); }
+.cp-amount-raw[open] > summary .cp-amount-raw-cue { transform: rotate(90deg); }
+.cp-amount-raw > summary:hover { color: var(--ws-ink); }
 .cp-amount-raw code { display: block; font: 400 12px/16px var(--ws-mono); color: var(--ws-ink); overflow-wrap: anywhere; }
 .cp-metadata-notice > svg { flex: none; }
 @media (prefers-reduced-motion: reduce) { .cp-amount-skeleton { animation: none; } }
@@ -1252,6 +1257,10 @@ body:has(.dashboard-app) .wallet-asset-popover { position: static; width: 100%; 
 .cp-overview-spending-body { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; }
 .cp-figures { display: grid; grid-template-columns: repeat(3, minmax(0, max-content)); gap: 16px 48px; flex: 1 1 420px; margin: 0; align-items: end; }
 .cp-figure { min-width: 0; }
+/* Unavailable metadata: the three labels keep their places, one grouped message below. */
+.cp-figures.is-unavailable { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; align-items: start; }
+.cp-figures-labels { display: grid; grid-template-columns: repeat(3, minmax(0, max-content)); gap: 16px 48px; margin: 0; }
+.cp-figures-labels dd { color: var(--ws-ink-secondary); }
 .cp-figure dt { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font: var(--ws-text-label); color: var(--ws-ink-secondary); }
 .cp-figure dd { margin: 0; font: 500 16px/22px Inter, sans-serif; color: var(--ws-ink); font-variant-numeric: tabular-nums; }
 
@@ -1294,6 +1303,7 @@ body:has(.dashboard-app) .wallet-asset-popover { position: static; width: 100%; 
   .dashboard-app.cp-app .cp-surface { padding: 18px 16px; border-radius: 14px; }
   .cp-figures { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
   .cp-figure.is-lead { grid-column: 1 / -1; }
+  .cp-figures-labels { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
   .cp-overview-spending-body { gap: 20px; align-items: flex-start; }
   .cp-overview-counts { gap: 12px; }
   .dashboard-app.cp-app .cp-count { min-height: 104px; padding: 14px; }

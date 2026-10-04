@@ -11,7 +11,7 @@ import { shortAddress } from "../ui/marks";
 import { publicReceiptPath } from "../receipts/model";
 import { useSlotEstimate } from "../owner/useSlotEstimate";
 import { estimatedSlotsForDays } from "../owner/slotEstimate";
-import { Amount } from "../ui/amount/Amount";
+import { Amount, AmountsUnavailable } from "../ui/amount/Amount";
 import { useMintMetadataMany } from "../ui/amount/useMintMetadata";
 import { formatDisplayAmount } from "../ui/amount/formatDisplayAmount";
 import { SectionHeader } from "../ui/workspace/SectionHeader";
@@ -144,20 +144,31 @@ export function OwnerOverview({ mandates, connections, connectionState, attentio
           )}
           <div className="cp-overview-spending-body">
             <UsageRing state={ring} label={ringLabel} />
-            <dl className="cp-figures">
-              <div className="cp-figure is-lead">
-                <dt><TokenIcon mint={selected.mint} size={18} /> Spent</dt>
-                <dd><Amount baseUnits={selected.active.spent} mint={selected.mint} symbol={symbol(selected.mint)} size="lead" /></dd>
+            {selectedState?.status === "unavailable" ? (
+              // Three figures of one mint without decimals: one message, one retry
+              // and one raw-units disclosure, as the permissions ledger does.
+              <div className="cp-figures is-unavailable">
+                <dl className="cp-figures-labels">
+                  {["Spent", "Remaining allowance", "Limit"].map((name) => <div className="cp-figure" key={name}><dt>{name}</dt><dd aria-label="Not available">—</dd></div>)}
+                </dl>
+                <AmountsUnavailable values={[["spent", selected.active.spent], ["remaining", selected.active.remaining], ["limit", selected.active.limit]]} onRetry={metadata.retryAll} />
               </div>
-              <div className="cp-figure">
-                <dt>Remaining allowance</dt>
-                <dd><Amount baseUnits={selected.active.remaining} mint={selected.mint} symbol={symbol(selected.mint)} showRetry={false} /></dd>
-              </div>
-              <div className="cp-figure">
-                <dt>Limit</dt>
-                <dd><Amount baseUnits={selected.active.limit} mint={selected.mint} symbol={symbol(selected.mint)} showRetry={false} /></dd>
-              </div>
-            </dl>
+            ) : (
+              <dl className="cp-figures">
+                <div className="cp-figure is-lead">
+                  <dt><TokenIcon mint={selected.mint} size={18} /> Spent</dt>
+                  <dd><Amount baseUnits={selected.active.spent} mint={selected.mint} symbol={symbol(selected.mint)} size="lead" /></dd>
+                </div>
+                <div className="cp-figure">
+                  <dt>Remaining allowance</dt>
+                  <dd><Amount baseUnits={selected.active.remaining} mint={selected.mint} symbol={symbol(selected.mint)} showRetry={false} /></dd>
+                </div>
+                <div className="cp-figure">
+                  <dt>Limit</dt>
+                  <dd><Amount baseUnits={selected.active.limit} mint={selected.mint} symbol={symbol(selected.mint)} showRetry={false} /></dd>
+                </div>
+              </dl>
+            )}
           </div>
           <p className="cp-caption">
             {selected.active.count} of {selected.permissionCount} {symbol(selected.mint)} {selected.permissionCount === 1 ? "permission is" : "permissions are"} active and counted here; paused, expired and revoked ones are left out. Remaining allowance is what agents may still spend, not a wallet balance or a card budget.

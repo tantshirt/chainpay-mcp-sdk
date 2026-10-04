@@ -1,4 +1,4 @@
-import { TriangleAlert } from "lucide-react";
+import { ChevronRight, TriangleAlert } from "lucide-react";
 import { formatDisplayAmount } from "./formatDisplayAmount";
 import { useMintMetadata } from "./useMintMetadata";
 import type { MintMetadataState } from "./mintMetadataStore";
@@ -57,7 +57,7 @@ export function Amount({ baseUnits, mint, symbol, showRetry = true, size = "defa
         <span className="cp-amount-unavailable">Amount unavailable</span>
         {showRetry && <button type="button" className="cp-amount-retry" onClick={(event) => { event.stopPropagation(); retry(); }}>Retry</button>}
         <details className="cp-amount-raw" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
-          <summary>raw units</summary>
+          <RawUnitsSummary />
           <code>{raw}</code>
         </details>
       </span>
@@ -70,6 +70,11 @@ export function Amount({ baseUnits, mint, symbol, showRetry = true, size = "defa
       {symbol ? <span className="cp-amount-symbol">{symbol}</span> : null}
     </span>
   );
+}
+
+/** A disclosure that looks like one: a chevron that turns when open, beside "raw units". */
+function RawUnitsSummary() {
+  return <summary><ChevronRight className="cp-amount-raw-cue" aria-hidden="true" size={14} strokeWidth={2} />raw units</summary>;
 }
 
 /** One retry for every unavailable mint in a section. */
@@ -92,12 +97,13 @@ export function MintMetadataNotice({ unavailable, onRetry, symbolFor, rawHint = 
  * Several amounts of one mint whose metadata is unavailable: one message and
  * one "raw units" disclosure instead of a repeated message per figure.
  */
-export function AmountsUnavailable({ values, label = "Amounts unavailable", showRaw = true }: { values: [string, bigint | string][]; label?: string; /** Off inside a clickable row whose detail view shows the raw units. */ showRaw?: boolean }) {
+export function AmountsUnavailable({ values, label = "Amounts unavailable", showRaw = true, onRetry }: { values: [string, bigint | string][]; label?: string; /** Off inside a clickable row whose detail view shows the raw units. */ showRaw?: boolean; /** One retry for the group, beside its message. */ onRetry?: () => void }) {
   return (
     <span className="cp-amount is-unavailable" data-amount-state="unavailable">
       <span className="cp-amount-unavailable">{label}</span>
+      {onRetry && <button type="button" className="cp-amount-retry" onClick={(event) => { event.stopPropagation(); onRetry(); }}>Retry</button>}
       {showRaw && <details className="cp-amount-raw" onClick={(event) => event.stopPropagation()} onKeyDown={(event) => event.stopPropagation()}>
-        <summary>raw units</summary>
+        <RawUnitsSummary />
         <code>{values.map(([name, value]) => `${name} ${value.toString()}`).join(" · ")}</code>
       </details>}
     </span>
