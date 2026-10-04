@@ -10,7 +10,6 @@ import { useCardsSummary } from "./overview/useCardsSummary";
 import { deriveCollectionState, type CollectionStateKind } from "../ui/workspace/collectionModel";
 import { TokenAddresses } from "./TokenAddresses";
 import { PendingSettlements } from "../settlement";
-import "./owner-dashboard.css";
 import "./workspace.css";
 import { BrandLogo } from "../brand/Brand";
 import { useSidebarCollapse } from "./useSidebarCollapse";
