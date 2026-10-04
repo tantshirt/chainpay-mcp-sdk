@@ -1514,7 +1514,7 @@ body:has(.dashboard-app) .wallet-asset-popover { position: static; width: 100%; 
 .dashboard-app.cp-app .onchain-receipts-card .receipt-ledger-table { width: 100%; font: var(--ws-text-table); }
 .dashboard-app.cp-app .onchain-receipts-card .receipt-ledger-table th { padding: 12px; font: var(--ws-text-label); color: var(--ws-ink-secondary); text-transform: none; }
 /* The payment column takes what the receipt actions leave; the actions column fits its buttons. */
-.dashboard-app.cp-app .onchain-receipts-card { container: receipts / inline-size; }
+.dashboard-app.cp-app .onchain-receipts-card { container: receipts / inline-size; --receipt-text-inset: 44px; }
 .dashboard-app.cp-app .onchain-receipts-card .receipt-ledger-table th:nth-child(2) { width: 18%; }
 .dashboard-app.cp-app .onchain-receipts-card .receipt-ledger-table th:nth-child(3) { width: 16%; }
 .dashboard-app.cp-app .onchain-receipts-card .receipt-ledger-table th:nth-child(4) { width: 1%; }
@@ -1533,10 +1533,20 @@ body:has(.dashboard-app) .wallet-asset-popover { position: static; width: 100%; 
 .dashboard-app.cp-app .onchain-receipts-card .cp-collection-notice { margin-top: 4px; }
 @container receipts (max-width: 760px) {
   .dashboard-app.cp-app .receipt-ledger-row { grid-template-columns: minmax(0, 1fr) auto; }
-  .dashboard-app.cp-app .receipt-ledger-table td.receipt-ledger-amount { grid-column: 1 / -1; text-align: left; padding: 0 0 0 56px; }
+  /* One left edge per record (council R2-P7): amount and status start on the title
+     column, the token icon alone sits in the gutter (32px icon + 12px gap). */
+  .dashboard-app.cp-app .receipt-ledger-table td.receipt-ledger-amount { grid-column: 1 / -1; text-align: left; padding: 0 0 0 var(--receipt-text-inset); }
   .dashboard-app.cp-app .receipt-ledger-amount .cp-amount { justify-content: flex-start; }
+  .dashboard-app.cp-app .receipt-ledger-table .receipt-ledger-status { padding: 0 0 0 var(--receipt-text-inset); }
+  /* The header actions wrap as one group: the settled count, then both buttons together. */
   .dashboard-app.cp-app .receipt-ledger-heading-actions { flex-direction: row; justify-content: flex-start; }
-  .dashboard-app.cp-app .receipt-ledger-heading-actions > .cp-status { flex-basis: 100%; width: fit-content; max-width: fit-content; }
+}
+.dashboard-app.cp-app .receipt-ledger-heading-buttons { display: flex; flex-wrap: nowrap; gap: 8px; }
+/* Phone width: the receipt actions take their own line on the title column, so the slot never wraps. */
+@container receipts (max-width: 420px) {
+  .dashboard-app.cp-app .receipt-ledger-table td:last-child { grid-column: 1 / -1; padding-left: var(--receipt-text-inset); }
+  .dashboard-app.cp-app .onchain-receipts-card .receipt-ledger-actions { margin-left: 0; }
+  .dashboard-app.cp-app .onchain-receipts-card .receipt-ledger-actions > :first-child { margin-left: calc(var(--ws-control-padding-ghost, 12px) * -1); }
 }
 
 /* --------------------------------------------------------------------------

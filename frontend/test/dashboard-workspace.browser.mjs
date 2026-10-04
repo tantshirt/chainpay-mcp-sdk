@@ -260,6 +260,12 @@ section("matrix", async () => {
             assert.ok(box && box.width >= 44 && box.height >= 44, `${label}: share button ${box?.width}×${box?.height} is at least 44px`);
           }
           assert.ok(await page.getByRole("button", { name: /^Share receipt / }).count() > 0, `${label}: share buttons are present`);
+          // One left edge per record: title, amount and status start on one column (the icon sits in its gutter).
+          const edges = await page.locator(".receipt-ledger-row").evaluateAll((rows) => rows.map((row) => [".receipt-ledger-payment strong", ".receipt-ledger-amount .cp-amount", ".receipt-ledger-status .cp-status"].map((selector) => Math.round(row.querySelector(selector).getBoundingClientRect().left))));
+          if (width < 1440) for (const row of edges) assert.equal(new Set(row).size, 1, `${label}: one left edge per payment record (title, amount, status at ${row.join(", ")})`);
+          // Header actions wrap as one group: Export CSV and Refresh stay together.
+          const [exportTop, refreshTop] = await Promise.all(["Export CSV", "Refresh"].map((name) => page.getByRole("button", { name, exact: true }).evaluate((el) => Math.round(el.getBoundingClientRect().top))));
+          assert.equal(exportTop, refreshTop, `${label}: Refresh is not orphaned on its own line`);
         }
         // Distinct icon per tone: a positive status is never shown with any icon but check-circle, and nothing else uses it.
         const statuses = await page.locator(".cp-status").evaluateAll((els) => els.map((el) => [el.dataset.tone, el.dataset.icon]));
