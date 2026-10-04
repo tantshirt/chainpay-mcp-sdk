@@ -2,9 +2,9 @@ import type { ReactNode } from "react";
 import { CircleX, Inbox, LogIn, TriangleAlert, type LucideIcon } from "lucide-react";
 import { Button } from "@astryxdesign/core/Button";
 import { Skeleton } from "@astryxdesign/core/Skeleton";
-import type { CollectionStateKind } from "./collectionState";
+import type { CollectionStateKind } from "./collectionModel";
 
-export type { CollectionStateKind } from "./collectionState";
+export type { CollectionStateKind } from "./collectionModel";
 
 /*
   Renders the non-loaded states of a collection with one shared shape, and the

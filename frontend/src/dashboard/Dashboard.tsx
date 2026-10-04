@@ -5,6 +5,8 @@ import payshLogo from "../assets/brands/paysh.svg";
 import x402Logo from "../assets/brands/x402-official.png";
 import { ArrowLeft, ArrowRight, ArrowUpRight, Bot, Check, ChevronDown, Copy, Download, Inbox, Menu, Plus, RefreshCw, Search, ReceiptText, Share2, ExternalLink, LogOut, CircleAlert, Settings2, ShieldCheck, Wallet, X } from "lucide-react";
 import { OwnerOverview } from "./OwnerOverview";
+import { useCardsSummary } from "./overview/useCardsSummary";
+import { deriveCollectionState } from "../ui/workspace/collectionModel";
 import { TokenAddresses } from "./TokenAddresses";
 import { PendingSettlements } from "../settlement";
 import "./owner-dashboard.css";
@@ -278,6 +280,7 @@ export function Dashboard({
   const voiceRecognition = useRef<SpeechRecognitionLike | null>(null);
   const [connections, setConnections] = useState<AgentConnection[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [connectionsVersion, setConnectionsVersion] = useState(0);
   const [dangerStatus, setDangerStatus] = useState("");
   const ownerSignIn = useOwnerSignIn();
   const [mandateCreateOpen, setMandateCreateOpen] = useState(Boolean(mandateBuilder));
@@ -507,7 +510,7 @@ export function Dashboard({
       active = false;
       window.clearInterval(interval);
     };
-  }, [wallet, ownerSignIn.status]);
+  }, [wallet, ownerSignIn.status, connectionsVersion]);
 
   function updateAgentInboxItem(id: string, patch: Partial<AgentInboxItem>) {
     setAgentInbox((current) => current.map((item) => item.id === id ? { ...item, ...patch } : item));
@@ -1037,6 +1040,8 @@ export function Dashboard({
   const mandateApproved = mandates.some((item) => item.owner === wallet && item.status !== "revoked");
   const agentPaired = connections.length > 0 || hostedAssistantStatus === "available";
   const agentsTabActive = tab === "agents" || tab === "connect-mcp";
+  const connectionState = deriveCollectionState({ signedIn: ownerSignIn.status === "ready", status: connectionStatus, count: connections.length });
+  const cardsSummary = useCardsSummary({ wallet, signedIn: ownerSignIn.status === "ready" && tab === "overview", walletSigner, walletMessageSigner, onCallMcp });
 
   const dashboardNav = {
     tab: (agentsTabActive ? "agents" : tab) as DashboardTab,
@@ -1159,7 +1164,7 @@ export function Dashboard({
                 />
               ) : (
                 <>
-                  <OwnerOverview mandates={mandates} connections={connections} connectionError={connectionStatus === "error"} attention={attentionItems} activity={recentActivity} assets={stablecoinOptions} onRequests={() => selectTab("assistant")} onAgents={() => selectTab("agents")} onPermissions={() => selectTab("mandates")} onPermission={(address) => onTabChange("mandates", { mandateDetail: address })} onPayments={() => selectTab("payments")} />
+                  <OwnerOverview mandates={mandates} connections={connections} connectionState={connectionState} attention={attentionItems} activity={recentActivity} assets={stablecoinOptions} cards={cardsSummary} onRetryConnections={() => setConnectionsVersion((value) => value + 1)} onRequests={() => selectTab("assistant")} onAgents={() => selectTab("agents")} onCards={() => selectTab("cards")} onPermissions={() => selectTab("mandates")} onPermission={(address) => onTabChange("mandates", { mandateDetail: address })} onPayments={() => selectTab("payments")} />
                 </>
               )}
             </>
