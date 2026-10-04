@@ -227,6 +227,9 @@ section("matrix", async () => {
           assert.equal(tabs.length, 4, `${label}: four request tabs`);
           assert.equal(new Set(tabs.map((tab) => tab.top)).size, 1, `${label}: request tabs on one row (${tabs.map((tab) => `${tab.name}@${tab.top}`).join(", ")})`);
           assert.ok(tabs.every((tab) => tab.name.length > 0), `${label}: every request tab is named`);
+          // At 390 and up all four fit: the strip neither scrolls nor fades a tab out.
+          const strip = await page.locator(".owner-inbox [role='tablist']").evaluate((el) => ({ hidden: el.scrollWidth - el.clientWidth, mask: getComputedStyle(el).maskImage }));
+          assert.ok(strip.hidden <= 1 && strip.mask === "none", `${label}: request tabs scroll or fade (${strip.hidden}px hidden, mask ${strip.mask})`);
         }
         if (state === "unavailable" && tab === "overview") {
           assert.match(text, /Amounts? unavailable/, `${label}: unavailable metadata says so`);

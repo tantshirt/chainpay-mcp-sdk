@@ -1658,6 +1658,6 @@ body:has(.dashboard-app) .wallet-asset-popover { position: static; width: 100%; 
   .dashboard-app.cp-app .owner-inbox .astryx-tab-strip::-webkit-scrollbar { display: none; }
   .dashboard-app.cp-app .owner-inbox .astryx-tab { flex: none; padding-inline: 8px; }
 }
-@container inbox (max-width: 340px) {
+@container inbox (max-width: 320px) {
   .dashboard-app.cp-app .owner-inbox .astryx-tab-strip { mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent); }
 }
