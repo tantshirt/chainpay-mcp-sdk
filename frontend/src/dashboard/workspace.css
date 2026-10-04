@@ -1223,6 +1223,8 @@ body:has(.dashboard-app) .wallet-asset-popover { position: static; width: 100%; 
 .cp-status[data-tone="warning"] { color: var(--ws-warning); background: var(--ws-warning-surface); }
 .cp-status[data-tone="critical"] { color: var(--ws-critical); background: var(--ws-critical-surface); }
 .cp-status[data-tone="unknown"] { color: var(--ws-neutral); background: transparent; border: 1px dashed #9aa6ba; }
+/* Example-data tag beside a heading whose source is illustrative (Cards fixtures). */
+.cp-illustrative-tag { display: inline-flex; align-items: center; min-height: 20px; margin-left: 8px; padding: 1px 8px; border: 1px dashed #9aa6ba; border-radius: 999px; font: var(--ws-text-label); color: var(--ws-neutral); vertical-align: middle; }
 
 /* --------------------------------------------------------------------------
    Section header

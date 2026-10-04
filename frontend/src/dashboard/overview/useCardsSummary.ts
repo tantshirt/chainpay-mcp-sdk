@@ -11,8 +11,8 @@ import { summarizeCards, type CardsSummary } from "./cardsSummary";
   states, nothing behind the private unlock.
 */
 export type CardsSummaryState =
-  | { state: "signed-out" | "loading" | "failed" | "not-enabled" }
-  | { state: "empty" | "loaded"; summary: CardsSummary };
+  | { state: "signed-out" | "loading" | "failed" | "not-enabled"; illustrative?: boolean }
+  | { state: "empty" | "loaded"; summary: CardsSummary; /** The source is example data (the Cards tab shows the same label). */ illustrative: boolean };
 
 type Deps = {
   wallet: string;
@@ -39,7 +39,8 @@ export function useCardsSummary({ wallet, signedIn, walletSigner, walletMessageS
         // A malformed answer is a failed read, never "no cards".
         if (!Array.isArray(cards)) { setResult({ wallet, value: { state: "failed" } }); return; }
         const summary = summarizeCards(cards);
-        setResult({ wallet, value: summary.total ? { state: "loaded", summary } : { state: "empty", summary } });
+        const illustrative = source.mode === "fixture";
+        setResult({ wallet, value: summary.total ? { state: "loaded", summary, illustrative } : { state: "empty", summary, illustrative } });
       },
       (error: unknown) => {
         if (!active) return;

@@ -17,7 +17,7 @@ import { formatDisplayAmount } from "../ui/amount/formatDisplayAmount";
 import { SectionHeader } from "../ui/workspace/SectionHeader";
 import { CollectionState } from "../ui/workspace/CollectionState";
 import { knownCount, type CollectionStateKind } from "../ui/workspace/collectionModel";
-import { Status, statusFor, type StatusProps } from "../ui/workspace/Status";
+import { Status, statusFor } from "../ui/workspace/Status";
 import { activityStatus, connectionStatusProps, requestStageStatus } from "./workspaceStatus";
 import { totalsByMint, usageRing } from "./overview/spending";
 import { UsageRing } from "./overview/UsageRing";
@@ -46,13 +46,6 @@ export type OwnerOverviewProps = {
   onPermissions: () => void;
   onPermission: (address: string) => void;
   onPayments: () => void;
-};
-
-const CARD_STATUS: Record<string, StatusProps["icon"]> = {
-  active: "check-circle", frozen: "pause", freeze_pending: "clock", setting_up: "clock", freeze_failed: "x-circle", needs_restore: "alert-triangle",
-};
-const CARD_TONE: Record<string, StatusProps["tone"]> = {
-  active: "positive", frozen: "neutral", freeze_pending: "info", setting_up: "info", freeze_failed: "critical", needs_restore: "warning",
 };
 
 export function OwnerOverview({ mandates, connections, connectionState, attention, activity, assets, cards, onRetryConnections, onRequests, onAgents, onCards, onPermissions, onPermission, onPayments }: OwnerOverviewProps) {
@@ -183,7 +176,7 @@ export function OwnerOverview({ mandates, connections, connectionState, attentio
         <CountTile
           icon={<CreditCard size={18} />} label="Cards" value={cardTotal} onClick={onCards}
           loading={cards.state === "loading"}
-          detail={cards.state === "signed-out" ? "Sign in to see" : cards.state === "not-enabled" ? "Not switched on" : cards.state === "failed" ? "Couldn’t load" : cards.state === "loaded" ? cards.summary.lifecycle.map((row) => `${row.count} ${row.label.toLowerCase()}`).join(" · ") : cards.state === "empty" ? "None yet" : ""}
+          detail={cards.state === "signed-out" ? "Sign in to see" : cards.state === "not-enabled" ? "Not switched on" : cards.state === "failed" ? "Couldn’t load" : cards.state === "loaded" ? `${cards.illustrative ? "Illustrative · " : ""}${cards.summary.lifecycle.map((row) => `${row.count} ${row.label.toLowerCase()}`).join(" · ")}` : cards.state === "empty" ? "None yet" : ""}
         />
       </section>
 
@@ -232,12 +225,12 @@ export function OwnerOverview({ mandates, connections, connectionState, attentio
           </section>
 
           <section className="cp-surface" aria-labelledby="overview-cards-title">
-            <SectionHeader id="overview-cards-title" title="Cards" action={<Button label="View cards" variant="ghost" onClick={onCards} />} />
+            <SectionHeader id="overview-cards-title" title={cards.illustrative ? <>Cards <span className="cp-illustrative-tag" data-testid="overview-cards-illustrative">Illustrative</span></> : "Cards"} description={cards.illustrative ? "Example cards. Nothing here is real money or a real card." : undefined} action={<Button label="View cards" variant="ghost" onClick={onCards} />} />
             {cards.state === "loaded" ? (
               <ul className="cp-row-list">
                 {cards.summary.lifecycle.map((row) => (
                   <li key={row.key} className="cp-row is-static is-compact">
-                    <span className="cp-row-main"><Status tone={CARD_TONE[row.key] ?? "unknown"} icon={CARD_STATUS[row.key] ?? "help-circle"} label={row.label} /></span>
+                    <span className="cp-row-main"><Status tone={row.tone} icon={row.icon} label={row.label} /></span>
                     <span className="cp-row-count">{row.count} {row.count === 1 ? "card" : "cards"}</span>
                   </li>
                 ))}

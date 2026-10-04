@@ -1,5 +1,6 @@
 import type { CardView } from "@chainpay/sdk";
-import { cardStatus, type PillTone } from "../cards/lifecycle";
+import { cardStatus, stateAppearance } from "../cards/lifecycle";
+import type { StatusIcon, StatusTone } from "../../ui/workspace/Status";
 
 /*
   Wallet-scoped Cards summary for Overview (EXPERIENCE.md, Cards row).
@@ -9,7 +10,8 @@ import { cardStatus, type PillTone } from "../cards/lifecycle";
   budget, balance, statement or credit figure is read or returned. Private
   amounts stay behind the Cards unlock.
 */
-export type CardsLifecycleCount = { key: string; label: string; tone: PillTone; count: number };
+/** Tone and icon come from the same state map the Cards area uses, so a state looks the same on both. */
+export type CardsLifecycleCount = { key: string; label: string; tone: StatusTone; icon: StatusIcon; count: number };
 export type CardsSummary = { total: number; lifecycle: CardsLifecycleCount[] };
 
 export function summarizeCards(cards: readonly CardView[]): CardsSummary {
@@ -18,7 +20,7 @@ export function summarizeCards(cards: readonly CardView[]): CardsSummary {
     const status = cardStatus(card);
     const existing = counts.get(status.key);
     if (existing) existing.count += 1;
-    else counts.set(status.key, { key: status.key, label: status.label, tone: status.tone, count: 1 });
+    else counts.set(status.key, { key: status.key, label: status.label, ...stateAppearance(status.key), count: 1 });
   }
   return { total: cards.length, lifecycle: [...counts.values()] };
 }
