@@ -321,6 +321,7 @@ export function Dashboard({
   const [approvalErrors, setApprovalErrors] = useState<Record<string, string>>({});
   const [hostedAssistantStatus, setHostedAssistantStatus] = useState<"unknown" | "available" | "unavailable">("unknown");
   const [walletMenuOpen, setWalletMenuOpen] = useState(false);
+  const phoneTopbar = usePhoneTopbar();
   const [walletAssets, setWalletAssets] = useState<WalletAssetSummary[]>([]);
   const [walletAssetRefresh, setWalletAssetRefresh] = useState(0);
   const [preparingWalletAsset, setPreparingWalletAsset] = useState("");
@@ -1116,7 +1117,9 @@ export function Dashboard({
                     type="button"
                     variant="secondary"
                     className="wallet-chip"
-                    label={switchingWalletAccount ? `Opening ${walletName}…` : `${walletName} · ${shortAddress(wallet)}`}
+                    // Phone width: the address alone, so a CSS ellipsis never cuts into an already shortened address.
+                    label={switchingWalletAccount ? `Opening ${walletName}…` : phoneTopbar ? shortAddress(wallet) : `${walletName} · ${shortAddress(wallet)}`}
+                    aria-label={switchingWalletAccount ? undefined : `${walletName} wallet ${shortAddress(wallet)}`}
                     icon={<WalletBrandMark name={walletName} icon={walletIcon} size={18} fallback />}
                     endContent={<ChevronDown size={16} />}
                   />
@@ -4004,6 +4007,21 @@ function MandateBuilder({ wallet, walletSigner, walletMessageSigner, stablecoinO
 }
 
 
+
+/** True under 520px, where the topbar wallet chip shows only the short address. */
+function usePhoneTopbar() {
+  const query = "(max-width: 520px)";
+  const [phone, setPhone] = useState(() => typeof window !== "undefined" && window.matchMedia?.(query).matches === true);
+  useEffect(() => {
+    const media = window.matchMedia?.(query);
+    if (!media) return;
+    const sync = () => setPhone(media.matches);
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
+  return phone;
+}
 
 export default function DashboardRoute(props: DashboardProps) {
   return <Dashboard {...props} />;
