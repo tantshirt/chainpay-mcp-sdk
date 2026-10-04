@@ -1130,6 +1130,8 @@ export function Dashboard({
             action={
               ["tools", "protocol", "connect-mcp"].includes(tab) ? <Button label="Back to settings" variant="secondary" icon={<ArrowLeft size={16} />} onClick={() => { setAdvancedSettingsOpen(true); selectTab("settings"); }} />
               : tab === "overview" && mandates.length === 0 ? null
+              // No permissions yet: the empty state carries the one New permission action.
+              : tab === "mandates" && mandates.length === 0 && !mandateCreateOpen ? null
               : tab === "overview" || tab === "mandates" ? (
                 mandateCreateOpen
                   ? <Button type="button" variant="secondary" className="refresh-button" label="Back to permissions" icon={<ArrowLeft size={16} />} isDisabled={false} onClick={closeMandateBuilder} />
@@ -1521,6 +1523,12 @@ export function MandatesPanel({
   return (
     <section className="mandates-panel" aria-labelledby="mandate-table-title">
       <div hidden={Boolean(fullDetailAddress)}>
+      {mandates.length === 0 ? (
+        // Nothing loaded: no filters, search or count over zero rows, and one action.
+        <div className="cp-surface cp-ledger cp-ledger-empty">
+          <CollectionState state="empty" noun="permissions" title="No spending permissions yet" description="Create a permission to give an agent bounded spending authority." icon={ShieldCheck} action={<Button type="button" variant="primary" label="New permission" icon={<Plus size={18} />} isDisabled={false} onClick={() => onCreateOpenChange(true)} />} />
+        </div>
+      ) : <>
       <div className="cp-ledger-toolbar">
         <SegmentedControl className="cp-segmented cp-ledger-filter" label="Filter permissions" value={filter} onChange={(value) => setFilter(value as "all" | MandateTableStatus)}>
           <SegmentedControlItem value="all" label="All" />
@@ -1586,12 +1594,13 @@ export function MandatesPanel({
                   </TableRow>
                 );
               }) : (
-                <TableRow className="mandate-empty-row"><TableCell colSpan={5}><CollectionState state="empty" noun="permissions" title={mandates.length ? (normalizedSearch ? "No permission matches this search" : `No ${filter} permissions`) : "No spending permissions yet"} description={mandates.length ? "Try another filter or search." : "Create a permission to give an agent bounded spending authority."} icon={ShieldCheck} action={mandates.length ? undefined : <Button type="button" variant="primary" label="New permission" icon={<Plus size={18} />} isDisabled={false} onClick={() => onCreateOpenChange(true)} />} /></TableCell></TableRow>
+                <TableRow className="mandate-empty-row"><TableCell colSpan={5}><CollectionState state="empty" noun="permissions" title={normalizedSearch ? "No permission matches this search" : `No ${filter} permissions`} description="Try another filter or search." icon={ShieldCheck} /></TableCell></TableRow>
               )}
             </TableBody>
           </Table>
         </div>
       </div>
+      </>}
       </div>
       <RecordDetails open={Boolean(expandedMandateAddress)} fullPage={Boolean(fullDetailAddress)} title="Spending permission" onClose={closeRecord}
         fullPageHref={expandedMandate ? buildPath({ kind: "app", tab: "mandates", mandateDetail: expandedMandate.address }) : undefined} onOpenFullPage={openFullRecord}>
