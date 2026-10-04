@@ -1571,3 +1571,43 @@ body:has(.dashboard-app) .wallet-asset-popover { position: static; width: 100%; 
 .dashboard-app.cp-app .cp-card-pill[data-tone="neutral"] { color: var(--ws-neutral); background: var(--ws-neutral-surface); }
 .dashboard-app.cp-app .cp-money { font-variant-numeric: tabular-nums; }
 .dashboard-app.cp-app .cp-unlock { border-radius: 12px; border-color: #cfdcf6; }
+
+/* ==========================================================================
+   3. Workspace contract (DESIGN.md 2026-10-04), applied once for every tab.
+      Legacy variable names now resolve to the workspace tokens so the older
+      panels and the new components share one palette.
+   ========================================================================== */
+.dashboard-app.cp-app {
+  --ink: var(--ws-ink); --body: var(--ws-ink-secondary); --muted: var(--ws-ink-secondary);
+  --line: var(--ws-border); --line-soft: var(--ws-border-soft); --soft: var(--ws-workspace); --blue: var(--ws-primary);
+  --radius-card: var(--ws-radius-surface); --radius-control: var(--ws-radius-control);
+  color: var(--ws-ink); background: var(--ws-workspace); font: var(--ws-text-body); font-variant-numeric: tabular-nums;
+}
+.dashboard-app.cp-app .dashboard-main { background: var(--ws-workspace); }
+/* Type scale: page 28/34 · section 18/24 · body 15/22 · table 14/20 · label 12/16 */
+.dashboard-app.cp-app .dashboard-heading h1 { font: var(--ws-text-page); letter-spacing: -.02em; margin: 0; color: var(--ws-ink); }
+.dashboard-app.cp-app .dashboard-heading p { margin-top: 6px; font: var(--ws-text-body); color: var(--ws-ink-secondary); }
+.dashboard-app.cp-app .dashboard-heading { margin-bottom: 28px; align-items: flex-end; }
+.dashboard-app.cp-app :is(.dashboard-card-heading h2, .dashboard-card > h2, .mandate-detail-heading h2, .owner-form-heading h2) { font: var(--ws-text-section); letter-spacing: -.01em; color: var(--ws-ink); }
+.dashboard-app.cp-app :is(.dashboard-card-heading h3, .cp-permission-editor h3) { font: 600 16px/22px Inter, sans-serif; }
+.dashboard-app.cp-app :is(table, .astryx-table) { font: var(--ws-text-table); }
+.dashboard-app.cp-app :is(.soft-label, .chip, .field-label) { font: var(--ws-text-label); letter-spacing: 0; text-transform: none; }
+/* Surfaces: white on the muted workspace, 1px border, one restrained shadow, 16px radius. */
+.dashboard-app.cp-app .dashboard-card { border: 1px solid var(--ws-border); border-radius: var(--ws-radius-surface); box-shadow: var(--ws-shadow-surface); background: var(--ws-surface); }
+.dashboard-app.cp-app .dashboard-card .dashboard-card,
+.dashboard-app.cp-app .cp-surface .dashboard-card { border-width: 1px 0 0; border-radius: 0; box-shadow: none; }
+.dashboard-app.cp-app :is(.builder-error, .success-box, .state-box, .cp-workspace-signin) { border-radius: 12px; }
+/* Controls: at least 44px tall; 10px control radius. */
+.dashboard-app.cp-app :is(.astryx-button, .astryx-icon-button, .button, [role="tab"], [role="radio"], select, .owner-lookup-summary) { min-height: var(--ws-control-height); }
+.dashboard-app.cp-app :is(.astryx-button, .astryx-icon-button) { border-radius: var(--ws-radius-control); }
+.dashboard-app.cp-app input:not([type="checkbox"], [type="radio"], [type="range"], [type="file"], [type="hidden"]) { min-height: var(--ws-control-height); }
+.dashboard-app.cp-app details > summary { min-height: var(--ws-control-height); display: list-item; padding-block: 10px; box-sizing: border-box; }
+.dashboard-app.cp-app details > summary.owner-lookup-summary,
+.dashboard-app.cp-app .owner-service-requests > summary { display: flex; padding-block: 0; }
+/* The raw-units disclosure is an inline detail: a 44px hit area that occupies a text line. */
+.dashboard-app.cp-app .cp-amount-raw > summary { min-height: var(--ws-control-height); margin-block: -10px; padding-block: 0; display: inline-flex; align-items: center; }
+/* Motion: 120ms presses, 200ms panels, ease-out; amounts never animate. */
+.dashboard-app.cp-app :is(.cp-row, .cp-count, .cp-request-row, .side-link) { transition-duration: var(--ws-duration-press); transition-timing-function: var(--ws-ease); }
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-app.cp-app *, .dashboard-app.cp-app *::before, .dashboard-app.cp-app *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+}

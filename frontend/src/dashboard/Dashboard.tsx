@@ -1545,7 +1545,7 @@ export function MandatesPanel({
             <TableHeader>
               <TableRow isHeaderRow>
                 <TableHeaderCell scope="col">Permission</TableHeaderCell>
-                <TableHeaderCell scope="col" className="cp-ledger-num">Spent / limit / remaining</TableHeaderCell>
+                <TableHeaderCell scope="col">Spent / limit / remaining</TableHeaderCell>
                 <TableHeaderCell scope="col">Expiry</TableHeaderCell>
                 <TableHeaderCell scope="col">Status</TableHeaderCell>
                 <TableHeaderCell scope="col" className="mandate-actions-heading"><span className="sr-only">Actions</span></TableHeaderCell>
@@ -1569,7 +1569,7 @@ export function MandatesPanel({
                         <span><strong>{mandateDisplayName(value, mandates, stablecoinOptions)}{selected ? <span className="cp-ledger-selected"> · Selected</span> : null}</strong><small>Agent <span className="mono">{shortAddress(value.approvedAgent)}</span></small></span>
                       </div>
                     </TableCell>
-                    <TableCell data-label="Amount" className="mandate-amount-cell cp-ledger-num">
+                    <TableCell data-label="Amount" className="mandate-amount-cell">
                       {mandateMints.states[value.allowedMint]?.status === "unavailable" ? <AmountsUnavailable showRaw={false} values={[["spent", value.amountSpent], ["limit", value.totalLimit], ["remaining", remaining]]} /> : <div className="cp-ledger-amounts">
                         <span className="cp-ledger-spent"><Amount baseUnits={value.amountSpent} mint={value.allowedMint} showRetry={false} /><span className="cp-ledger-of">of</span><Amount baseUnits={value.totalLimit} mint={value.allowedMint} symbol={symbol} showRetry={false} /></span>
                         <span className="cp-ledger-remaining">Remaining <Amount baseUnits={remaining} mint={value.allowedMint} symbol={symbol} showRetry={false} /></span>
