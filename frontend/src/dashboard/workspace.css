@@ -1623,3 +1623,15 @@ body:has(.dashboard-app) .wallet-asset-popover { position: static; width: 100%; 
   .dashboard-app.cp-app .cp-ledger-filter { width: 100%; }
   .dashboard-app.cp-app .cp-ledger-filter .astryx-segmented-control-item { flex: 1 1 auto; padding-inline: 6px; }
 }
+
+/* Requests tabs at phone width (council R2-P6): one row, never two levels. Short
+   labels (set in the panel) and tighter padding fit all four at 390. Below that the
+   strip scrolls natively, with a fade on the edge that has more tabs. */
+@media (max-width: 520px) {
+  .dashboard-app.cp-app .owner-inbox .astryx-tab-strip { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .dashboard-app.cp-app .owner-inbox .astryx-tab-strip::-webkit-scrollbar { display: none; }
+  .dashboard-app.cp-app .owner-inbox .astryx-tab { flex: none; padding-inline: 8px; }
+}
+@container inbox (max-width: 340px) {
+  .dashboard-app.cp-app .owner-inbox .astryx-tab-strip { mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent); }
+}

@@ -322,7 +322,7 @@ export function Dashboard({
   const [approvalErrors, setApprovalErrors] = useState<Record<string, string>>({});
   const [hostedAssistantStatus, setHostedAssistantStatus] = useState<"unknown" | "available" | "unavailable">("unknown");
   const [walletMenuOpen, setWalletMenuOpen] = useState(false);
-  const phoneTopbar = usePhoneTopbar();
+  const phoneTopbar = usePhoneWidth();
   const [walletAssets, setWalletAssets] = useState<WalletAssetSummary[]>([]);
   const [walletAssetRefresh, setWalletAssetRefresh] = useState(0);
   const [preparingWalletAsset, setPreparingWalletAsset] = useState("");
@@ -2925,6 +2925,13 @@ function AgentRequirementChecklist({ requirements }: { requirements: AgentRequir
   </div>;
 }
 
+const REQUEST_TABS = [
+  { value: "attention", label: "Needs attention", short: "Attention" },
+  { value: "progress", label: "In progress", short: "In progress" },
+  { value: "completed", label: "Completed", short: "Done" },
+  { value: "archived", label: "Archived", short: "Archived" },
+] as const;
+
 function AgentInboxPanel({ inbox, approvalStatuses, approvalErrors, stablecoinOptions, mandateDecimals, mandate, onApprove, onArchive, onRestore, permissionRequests, onNewRequest }: { inbox: AgentInboxItem[]; approvalStatuses: Record<string, ApprovalStatus>; approvalErrors: Record<string, string>; stablecoinOptions: StablecoinOption[]; mandateDecimals: number | null; mandate: Mandate | null; onApprove: (id: string) => Promise<void>; onArchive: (id: string) => void; onRestore: (id: string) => void; onNewRequest?: () => void; permissionRequests?: PermissionRequestPanelProps }) {
   const [filter, setFilter] = useState("attention");
   const [selected, setSelected] = useState<string | null>(null);
@@ -2948,7 +2955,9 @@ function AgentInboxPanel({ inbox, approvalStatuses, approvalErrors, stablecoinOp
   };
   const visible = inbox.filter(matches);
   const requestMints = useMintMetadataMany(visible.map((item) => requestAmount(item)?.mint).filter((mint): mint is string => Boolean(mint)));
-  return <section className="cp-surface owner-inbox"><TabList role="tablist" value={filter} onChange={(value) => { setFilter(String(value)); setSelected(null); }} aria-label="Request status"><Tab value="attention" label="Needs attention" panelId="request-attention" /><Tab value="progress" label="In progress" panelId="request-progress" /><Tab value="completed" label="Completed" panelId="request-completed" /><Tab value="archived" label="Archived" panelId="request-archived" /></TabList><div id={`request-${filter}`} role="tabpanel" aria-label={filter === "attention" ? "Needs attention" : filter}>
+  // Phone width: short labels keep the four tabs on one row (the strip scrolls only below ~370px).
+  const phone = usePhoneWidth();
+  return <section className="cp-surface owner-inbox"><TabList role="tablist" className="cp-request-tabs" value={filter} onChange={(value) => { setFilter(String(value)); setSelected(null); }} aria-label="Request status">{REQUEST_TABS.map((tab) => <Tab key={tab.value} value={tab.value} label={phone ? tab.short : tab.label} panelId={`request-${tab.value}`} />)}</TabList><div id={`request-${filter}`} role="tabpanel" aria-label={filter === "attention" ? "Needs attention" : filter}>
     {!visible.length && <CollectionState state="empty" noun="requests" compact title={filter === "attention" ? "Nothing in this browser needs your approval" : filter === "archived" ? "No archived requests" : filter === "completed" ? "No completed requests yet" : "No requests in progress"} description={filter === "attention" ? "Requests waiting for approval or more details appear here. Permission requests from vendors arrive as links and land here when opened." : "Requests move here as they’re paid and completed."} />}
     {visible.length > 0 && <MintMetadataNotice unavailable={requestMints.unavailable} onRetry={requestMints.retryAll} symbolFor={(mint) => stablecoinOptions.find((option) => option.mint === mint)?.label ?? shortAddress(mint)} rawHint="Each request’s details keep its exact raw units." />}
     {visible.map((item) => <article className="owner-request-record" key={item.id}><button className="owner-request-summary cp-request-row" aria-expanded={selected === item.id} onClick={() => setSelected(selected === item.id ? null : item.id)}><span className="cp-row-icon" aria-hidden="true"><Inbox size={18} /></span><span className="cp-row-main"><strong>{item.title || "Payment request"}</strong><small>{workspaceDateTime(item.createdAt) ?? "Date unavailable"}</small></span><span className="cp-request-amount">{(() => { const amount = requestAmount(item); if (!amount) return <span className="cp-request-noamount">No amount yet</span>; const symbol = stablecoinOptions.find((option) => option.mint === amount.mint)?.label ?? "tokens"; return requestMints.states[amount.mint]?.status === "unavailable" ? <span className="cp-amount-unavailable">Amount unavailable</span> : <Amount baseUnits={amount.baseUnits} mint={amount.mint} symbol={symbol} showRetry={false} />; })()}</span><Status {...inboxStatus(item)} /><span className="cp-request-next">{requestNextAction(item, selected === item.id)}<ChevronDown size={16} aria-hidden="true" /></span></button>{selected === item.id && item.source === "permission-request" && permissionRequests && <div className="owner-request-body"><PermissionRequestCard item={item} symbolFor={permissionRequests.symbolFor} retrying={permissionRequests.retryingHash === item.permissionRequest?.requestHash} onReview={permissionRequests.onReview} onDecline={() => permissionRequests.onDecline(item.id)} onRetryLink={permissionRequests.onRetryLink} />{isInboxItemArchived(item) && <Button label="Restore request" variant="secondary" onClick={() => onRestore(item.id)} />}</div>}{selected === item.id && item.source !== "permission-request" && <div className="owner-request-body"><PurchaseCard purchase={purchaseCardFromInboxItem(item, { stablecoinOptions, mandateDecimals, mandate, crossmint: CROSSMINT_ENABLED })} />{item.crossmint?.blockedReason === "closed" && onNewRequest && <div className="owner-request-next"><Button label="New request" variant="secondary" onClick={onNewRequest} /></div>}{item.crossmint?.blockedReason === "already_paid" && <div className="owner-request-next"><Button label="Show completed requests" variant="secondary" onClick={() => { setFilter("completed"); setSelected(null); }} /></div>}{item.attachments.length > 0 && <div className="agent-attachment-previews">{item.attachments.map((attachment) => <div className="agent-attachment-preview" key={attachment.name}>{attachment.previewUrl && <img src={attachment.previewUrl} alt="" />}<span>{attachment.name}</span></div>)}</div>}
@@ -4017,8 +4026,11 @@ function MandateBuilder({ wallet, walletSigner, walletMessageSigner, stablecoinO
 
 
 
-/** True under 520px, where the topbar wallet chip shows only the short address. */
-function usePhoneTopbar() {
+/**
+ * True under 520px: the topbar wallet chip shows only the short address, and the
+ * Requests tabs use their short labels so all four fit on one row.
+ */
+function usePhoneWidth() {
   const query = "(max-width: 520px)";
   const [phone, setPhone] = useState(() => typeof window !== "undefined" && window.matchMedia?.(query).matches === true);
   useEffect(() => {
