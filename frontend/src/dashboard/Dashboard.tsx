@@ -3176,7 +3176,7 @@ function ConnectMcpPanel({ connectionState = "loaded", onSignIn, onRetry, server
                 <span>{connectionScopeDetails(connection.scope).label}</span>
               </div>
               <Status {...connectionStatusProps(connection)} />
-              <Button variant="ghost" label="Revoke" aria-label={`Revoke ${connection.agentName}`} onClick={() => setRevokeId(connection.id)} />
+              <Button variant="destructive" className="owner-danger-action" label="Revoke" aria-label={`Revoke ${connection.agentName}`} onClick={() => setRevokeId(connection.id)} />
               <details className="technical-details cp-agent-details"><summary>Connection details and activity</summary><p>Owner: <span className="mono">{connection.wallet}</span></p><p>{connection.mandates} associated spending permission{connection.mandates === 1 ? "" : "s"} · {connection.totalCalls} tool call{connection.totalCalls === 1 ? "" : "s"}</p><div className="connection-tools">{connection.toolsCalled.length ? connection.toolsCalled.map((tool) => <span className="tool-call-chip" key={tool.name}>{tool.name} <b>×{tool.count}</b></span>) : <span>No tool activity recorded.</span>}</div></details>
             </li>
           ))}
