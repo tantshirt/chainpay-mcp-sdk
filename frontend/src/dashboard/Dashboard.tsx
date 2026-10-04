@@ -1566,7 +1566,7 @@ export function MandatesPanel({
                     <TableCell data-label="Agent">
                       <div className="cp-ledger-permission">
                         <TokenIcon mint={value.allowedMint} size={28} />
-                        <span><strong>{mandateDisplayName(value, mandates, stablecoinOptions)}{selected ? <span className="cp-ledger-selected"> · Selected</span> : null}</strong><small>Agent <span className="mono">{shortAddress(value.approvedAgent)}</span></small></span>
+                        <span><strong>{mandateDisplayName(value, mandates, stablecoinOptions)}</strong><small>Agent <span className="mono">{shortAddress(value.approvedAgent)}</span></small></span>
                       </div>
                     </TableCell>
                     <TableCell data-label="Amount" className="mandate-amount-cell">

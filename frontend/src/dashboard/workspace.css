@@ -1349,7 +1349,6 @@ body:has(.dashboard-app) .wallet-asset-popover { position: static; width: 100%; 
 .cp-ledger-permission { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .cp-ledger-permission > span { min-width: 0; }
 .cp-ledger-permission strong { display: block; font: 500 14px/20px Inter, sans-serif; color: var(--ws-ink); overflow-wrap: anywhere; }
-.cp-ledger-selected { font-weight: 400; color: var(--ws-ink-secondary); }
 .cp-ledger-permission small { display: block; margin-top: 2px; font: 400 13px/18px Inter, sans-serif; color: var(--ws-ink-secondary); }
 .dashboard-app.cp-app .cp-ledger-permission small .mono { font: 400 12px/18px var(--ws-mono); }
 .cp-ledger-amounts { display: grid; gap: 2px; font-variant-numeric: tabular-nums; }
