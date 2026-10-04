@@ -1615,3 +1615,6 @@ body:has(.dashboard-app) .wallet-asset-popover { position: static; width: 100%; 
 .dashboard-app.cp-app .cp-cards :is(section, div):has(> .cp-card-table-wrap) { min-width: 0; max-width: 100%; }
 .dashboard-app.cp-app .cp-card-table-wrap { position: relative; max-width: 100%; overflow-x: auto; }
 .dashboard-app.cp-app :is(.cp-card-name, .cp-link-button) { min-height: var(--ws-control-height); }
+/* Navigation chrome keeps the 14/20 rhythm on whole pixels, so the sticky footer lines up with the viewport edge. */
+.dashboard-app.cp-app :is(.dashboard-sidebar, .dashboard-topbar) { font: 400 14px/20px Inter, sans-serif; }
+.dashboard-app.cp-app .dashboard-sidebar-brand { height: 56px; }
