@@ -64,7 +64,6 @@ import { EmptyOwnerOverview } from "../owner/EmptyOwnerOverview";
 import {
   attentionInboxItems,
   connectionIsLive,
-  inboxAttentionCounts,
   preparedRequestReceiptAddresses,
   purchaseCardFromInboxItem,
 } from "../owner/purchaseCard";
@@ -1044,7 +1043,6 @@ export function Dashboard({
       ? "error"
       : "ready";
 
-  const inboxCounts = inboxAttentionCounts(agentInbox);
   const attentionItems = attentionInboxItems(agentInbox);
   const preparedReceiptAddresses = preparedRequestReceiptAddresses(agentInbox);
   const recentActivity = buildRecentActivity(agentInbox, settlementHistory);
@@ -1057,7 +1055,8 @@ export function Dashboard({
 
   const dashboardNav = {
     tab: (agentsTabActive ? "agents" : tab) as DashboardTab,
-    approvalCount: inboxCounts.waiting,
+    // The same count as Overview's "Open requests" and the Requests "Needs attention" list.
+    approvalCount: attentionItems.length,
     toolCount: mcpTools.length,
     onSelect: selectTab,
     onNavigateHome,
