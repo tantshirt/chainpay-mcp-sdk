@@ -103,18 +103,23 @@ export function compareMandatesByCreation(left: Mandate, right: Mandate) {
   return createdAtDifference || right.address.localeCompare(left.address);
 }
 
+/** The workspace's one date-and-time format: "Sep 15, 2026, 7:00 PM". Null for an invalid date. */
+export function workspaceDateTime(value: string | number | Date): string | null {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+}
+
 export function mandateCreatedLabel(mandate: Mandate) {
   if (mandate.createdAt !== undefined) {
-    const date = new Date(mandate.createdAt * 1_000);
-    if (!Number.isNaN(date.getTime())) {
-      return new Intl.DateTimeFormat(undefined, {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-      }).format(date);
-    }
+    const label = workspaceDateTime(mandate.createdAt * 1_000);
+    if (label) return label;
   }
   return mandate.createdAtSlot === undefined ? "Creation time unavailable" : `Created at slot ${mandate.createdAtSlot}`;
 }
