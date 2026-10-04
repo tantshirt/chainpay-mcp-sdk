@@ -255,7 +255,8 @@ export function OwnerOverview({ mandates, connections, connectionState, attentio
                 onRetry={cards.retry}
               />
             )}
-            <p className="cp-caption">Counts only. Card limits and spending stay private until you unlock them in Cards.</p>
+            {/* Only under counts: a sign-in prompt, an empty list or an error counts nothing. */}
+            {cards.state === "loaded" && <p className="cp-caption">Counts only. Card limits and spending stay private until you unlock them in Cards.</p>}
           </section>
         </div>
       </div>
