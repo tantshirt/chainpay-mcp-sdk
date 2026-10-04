@@ -376,3 +376,18 @@
   .dashboard-app.cp-app .receipt-ledger-heading-actions { flex-direction: row; justify-content: flex-start; }
   .dashboard-app.cp-app .receipt-ledger-heading-actions > .cp-status { flex-basis: 100%; width: fit-content; max-width: fit-content; }
 }
+
+/* --------------------------------------------------------------------------
+   Settings
+   -------------------------------------------------------------------------- */
+.dashboard-app.cp-app .owner-settings { display: grid; gap: 24px; max-width: none; }
+.dashboard-app.cp-app .owner-settings .owner-settings-row { padding: 16px 0; border-top: 1px solid var(--ws-border-soft); gap: 16px 24px; }
+.dashboard-app.cp-app .owner-settings .cp-section-header + .owner-settings-row,
+.dashboard-app.cp-app .owner-settings .cp-section-header + .owner-account-identity + .owner-settings-row { border-top: 0; }
+.dashboard-app.cp-app .owner-settings .owner-settings-row strong { font: 500 14px/20px Inter, sans-serif; color: var(--ws-ink); }
+.dashboard-app.cp-app .owner-settings .owner-settings-row p { font: 400 13px/18px Inter, sans-serif; color: var(--ws-ink-secondary); }
+.dashboard-app.cp-app .owner-account-identity { margin-bottom: 8px; padding: 16px; border: 1px solid var(--ws-border-soft); border-radius: 12px; background: #fafbfd; }
+.dashboard-app.cp-app .owner-mcp-endpoint { font: 400 13px/18px var(--ws-mono); color: var(--ws-ink); }
+.dashboard-app.cp-app .owner-advanced-settings > summary { min-height: 56px; }
+.dashboard-app.cp-app .owner-advanced-settings > summary strong { font: var(--ws-text-section); }
+.dashboard-app.cp-app .owner-settings-danger { border-color: #efd5d9; }
