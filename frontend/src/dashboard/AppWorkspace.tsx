@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { OwnerEntry } from "../owner/OwnerEntry";
 import { useOwnerSignIn } from "../owner/useOwnerSignIn";
 import "./owner-dashboard.css";
+import "./workspace.css";
 import { useRoute } from "../routing/useRoute";
 import { useWallet } from "../wallet/context";
 import { OwnerWelcome } from "../owner/OwnerWelcome";

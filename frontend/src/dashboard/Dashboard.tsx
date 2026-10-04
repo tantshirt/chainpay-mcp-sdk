@@ -8,6 +8,7 @@ import { OwnerOverview } from "./OwnerOverview";
 import { TokenAddresses } from "./TokenAddresses";
 import { PendingSettlements } from "../settlement";
 import "./owner-dashboard.css";
+import "./workspace.css";
 import { BrandLogo } from "../brand/Brand";
 import { useSidebarCollapse } from "./useSidebarCollapse";
 import { useSettlementFormStatus, settlementPendingEvent, settlementTerminalEvent, listStoredOperations, publishSettlement, PendingSettlementError, type Operation, isPendingSettlement } from "../settlement";

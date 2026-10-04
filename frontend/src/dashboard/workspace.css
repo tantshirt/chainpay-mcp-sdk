@@ -1,0 +1,105 @@
+/* ==========================================================================
+   Owner workspace layer (DESIGN.md "Owner dashboard — 2026-10-04").
+
+   The one stylesheet for the connected workspace. Tokens live on .cp-app;
+   every component rule is scoped under .dashboard-app.cp-app so nothing here
+   reaches the landing, verify or receipt documents.
+   ========================================================================== */
+
+.cp-app {
+  /* Colour */
+  --ws-primary: #0052ff;
+  --ws-primary-ink: #0047de;
+  --ws-primary-surface: #edf3ff;
+  --ws-ink: #14213d;
+  --ws-ink-secondary: #56647d;
+  --ws-border: #dbe2ef;
+  --ws-border-soft: #e9edf4;
+  --ws-surface: #fff;
+  --ws-workspace: #f6f8fb;
+  --ws-positive: #19633f;
+  --ws-positive-surface: #eaf5ef;
+  --ws-info: #0047de;
+  --ws-info-surface: #edf3ff;
+  --ws-neutral: #4a5568;
+  --ws-neutral-surface: #f1f3f7;
+  --ws-warning: #72500b;
+  --ws-warning-surface: #fff4dc;
+  --ws-critical: #a3212f;
+  --ws-critical-surface: #fff1f2;
+  --ws-ring-track: #dbe2ef;
+  --ws-ring-warning: #b7791f;
+
+  /* Type scale: page 28/34 · section 18/24 · body 15/22 · table 14/20 · label 12/16 */
+  --ws-text-page: 600 28px/34px Inter, sans-serif;
+  --ws-text-section: 600 18px/24px Inter, sans-serif;
+  --ws-text-body: 400 15px/22px Inter, sans-serif;
+  --ws-text-table: 400 14px/20px Inter, sans-serif;
+  --ws-text-label: 500 12px/16px Inter, sans-serif;
+  --ws-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Surfaces and controls */
+  --ws-radius-surface: 16px;
+  --ws-radius-control: 10px;
+  --ws-shadow-surface: 0 1px 2px rgb(20 33 61 / 6%), 0 4px 12px rgb(20 33 61 / 4%);
+  --ws-control-height: 44px;
+
+  /* Motion */
+  --ws-ease: cubic-bezier(.22, 1, .36, 1);
+  --ws-duration-press: 120ms;
+  --ws-duration-panel: 200ms;
+}
+
+/* --------------------------------------------------------------------------
+   Status
+   -------------------------------------------------------------------------- */
+.cp-status {
+  display: inline-flex; align-items: center; gap: 6px; width: fit-content; max-width: 100%;
+  min-height: 24px; padding: 3px 8px; border: 1px solid transparent; border-radius: 999px;
+  font: var(--ws-text-label); white-space: nowrap;
+}
+.cp-status > svg { flex: none; }
+.cp-status[data-tone="positive"] { color: var(--ws-positive); background: var(--ws-positive-surface); }
+.cp-status[data-tone="info"] { color: var(--ws-info); background: var(--ws-info-surface); }
+.cp-status[data-tone="neutral"] { color: var(--ws-neutral); background: var(--ws-neutral-surface); }
+.cp-status[data-tone="warning"] { color: var(--ws-warning); background: var(--ws-warning-surface); }
+.cp-status[data-tone="critical"] { color: var(--ws-critical); background: var(--ws-critical-surface); }
+.cp-status[data-tone="unknown"] { color: var(--ws-neutral); background: transparent; border: 1px dashed #9aa6ba; }
+
+/* --------------------------------------------------------------------------
+   Section header
+   -------------------------------------------------------------------------- */
+.cp-section-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+.cp-section-header-text { min-width: 0; flex: 1 1 260px; }
+.dashboard-app.cp-app .cp-section-header h2,
+.dashboard-app.cp-app .cp-section-header h3 { margin: 0; font: var(--ws-text-section); letter-spacing: -.01em; color: var(--ws-ink); }
+.dashboard-app.cp-app .cp-section-header h3 { font-size: 16px; }
+.dashboard-app.cp-app .cp-section-header p { margin: 4px 0 0; font: var(--ws-text-table); color: var(--ws-ink-secondary); max-width: 65ch; }
+.cp-section-header-action { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* --------------------------------------------------------------------------
+   Collection states
+   -------------------------------------------------------------------------- */
+.cp-collection-state {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px 16px;
+  padding: 20px; border: 1px dashed var(--ws-border); border-radius: 12px; background: var(--ws-surface);
+}
+.cp-collection-state.is-compact { padding: 14px 16px; }
+.cp-collection-state.is-loading { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; border-style: solid; border-color: transparent; padding: 4px 0; }
+.cp-collection-state[data-state="failed"] { border-style: solid; border-color: #f0cdd2; background: var(--ws-critical-surface); }
+.cp-collection-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 10px; color: var(--ws-info); background: var(--ws-info-surface); }
+.cp-collection-state[data-state="failed"] .cp-collection-icon { color: var(--ws-critical); background: #fff; }
+.cp-collection-state[data-state="signed-out"] .cp-collection-icon { color: var(--ws-neutral); background: var(--ws-neutral-surface); }
+.cp-collection-copy { min-width: 0; }
+.cp-collection-copy strong { display: block; font: 600 15px/22px Inter, sans-serif; color: var(--ws-ink); }
+.dashboard-app.cp-app .cp-collection-copy p { margin: 2px 0 0; font: var(--ws-text-table); color: var(--ws-ink-secondary); max-width: 60ch; }
+.cp-collection-notice {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px;
+  padding: 12px 16px; margin-bottom: 16px; border-radius: 12px; color: var(--ws-warning); background: var(--ws-warning-surface);
+}
+.cp-collection-notice strong { font: 600 14px/20px Inter, sans-serif; }
+.dashboard-app.cp-app .cp-collection-notice p { margin: 2px 0 0; font: var(--ws-text-table); color: #5d4410; }
+@media (max-width: 560px) {
+  .cp-collection-state, .cp-collection-notice { grid-template-columns: auto minmax(0, 1fr); }
+  .cp-collection-state > :last-child:not(.cp-collection-copy), .cp-collection-notice > :last-child:not(div) { grid-column: 1 / -1; justify-self: start; }
+}
