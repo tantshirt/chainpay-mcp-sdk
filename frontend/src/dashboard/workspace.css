@@ -278,3 +278,30 @@
   .dashboard-app.cp-app .cp-ledger .mandate-table tbody tr:not(.mandate-empty-row) td::before { font: var(--ws-text-label); text-transform: none; color: var(--ws-ink-secondary); }
   .dashboard-app.cp-app .cp-ledger .mandate-table tbody tr:not(.mandate-empty-row) td[data-label="Status"]::before { display: none; }
 }
+
+/* --------------------------------------------------------------------------
+   Agents
+   -------------------------------------------------------------------------- */
+.dashboard-app.cp-app :is(.agents-tab-panel, .connect-panel) { display: grid; gap: 24px; width: 100%; max-width: none; margin-top: 0; }
+.cp-agent-list { list-style: none; margin: 0; padding: 0; }
+.dashboard-app.cp-app .cp-agent-row {
+  display: grid; grid-template-columns: 36px minmax(0, 1.3fr) minmax(0, 1fr) 190px 96px; align-items: center; gap: 8px 16px;
+  padding: 14px 0; border-bottom: 1px solid var(--ws-border-soft);
+}
+.dashboard-app.cp-app .cp-agent-row:last-child { border-bottom: 0; }
+.dashboard-app.cp-app .cp-agent-main h3 { margin: 0; font: 500 15px/22px Inter, sans-serif; color: var(--ws-ink); overflow-wrap: anywhere; }
+.dashboard-app.cp-app .cp-agent-main p, .dashboard-app.cp-app .cp-agent-scope { margin: 2px 0 0; font: 400 13px/18px Inter, sans-serif; color: var(--ws-ink-secondary); }
+.cp-agent-scope { display: grid; min-width: 0; }
+.cp-agent-label { font: var(--ws-text-label); color: var(--ws-ink-secondary); }
+.dashboard-app.cp-app .cp-agent-scope > span:last-child { color: var(--ws-ink); font-size: 14px; }
+.dashboard-app.cp-app .cp-agent-details { grid-column: 2 / -1; margin: 0; padding: 0; border: 0; font-size: 13px; overflow-wrap: anywhere; }
+.dashboard-app.cp-app .cp-agent-details summary { padding: 6px 0; min-height: 32px; font-size: 13px; }
+.dashboard-app.cp-app .cp-agent-row > .astryx-button { justify-self: end; }
+.dashboard-app.cp-app .cp-agent-details p { margin: 4px 0 0; color: var(--ws-ink-secondary); }
+@media (max-width: 760px) {
+  .dashboard-app.cp-app .cp-agent-row { grid-template-columns: 36px minmax(0, 1fr) auto; }
+  .dashboard-app.cp-app .cp-agent-row > .cp-status { grid-column: 2 / -1; }
+  .dashboard-app.cp-app .cp-agent-scope { grid-column: 2 / -1; }
+  .dashboard-app.cp-app .cp-agent-row > .cp-status { grid-column: 2; justify-self: start; }
+  .dashboard-app.cp-app .cp-agent-row > .astryx-button { grid-column: 3; grid-row: 1; }
+}

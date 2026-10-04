@@ -5,8 +5,9 @@ import payshLogo from "../assets/brands/paysh.svg";
 import x402Logo from "../assets/brands/x402-official.png";
 import { ArrowLeft, ArrowRight, ArrowUpRight, Bot, Check, ChevronDown, Copy, Download, Inbox, Menu, Plus, RefreshCw, Search, ReceiptText, Share2, ExternalLink, LogOut, CircleAlert, Settings2, ShieldCheck, Wallet, X } from "lucide-react";
 import { OwnerOverview } from "./OwnerOverview";
+import { connectionStatusProps, requestStageStatus, settlementStatus } from "./workspaceStatus";
 import { useCardsSummary } from "./overview/useCardsSummary";
-import { deriveCollectionState } from "../ui/workspace/collectionModel";
+import { deriveCollectionState, type CollectionStateKind } from "../ui/workspace/collectionModel";
 import { TokenAddresses } from "./TokenAddresses";
 import { PendingSettlements } from "../settlement";
 import "./owner-dashboard.css";
@@ -1147,7 +1148,7 @@ export function Dashboard({
           <PendingSettlements wallet={wallet} />
 
 
-          <div>{tab === "cards" ? <CardsArea wallet={wallet} walletSigner={walletSigner} walletMessageSigner={walletMessageSigner} onCallMcp={onCallMcp} mandates={mandates} cardsNew={cardsNew} cardId={cardId} cardSection={cardSection} notice={ownerSignIn.status !== "ready" ? <div className="cp-workspace-signin is-compact"><div><p>Sign in to load your cards. A login message is not a spending approval.</p></div>{ownerSignIn.error && <p role="alert">{ownerSignIn.error}</p>}</div> : undefined} onNavigate={(target) => { setMobileNav(false); onTabChange("cards", target); }} /> : tab === "assistant" ? <AssistantPanel prompt={prompt} setPrompt={setPrompt} reply={reply} thinking={thinking} listening={listening} agentToolsUsed={agentToolsUsed} inbox={agentInbox} approvalStatuses={approvalStatuses} approvalErrors={approvalErrors} attachments={agentAttachments} attachmentError={attachmentError} stablecoinOptions={stablecoinOptions} mandateDecimals={mandateDecimals} mandate={mandate} sessionReady={ownerSignIn.status === "ready"} onSignIn={() => void ownerSignIn.signIn()} onAsk={() => void askChainPay()} onVoice={startVoice} onLoadDemoInvoice={() => void loadDemoPaymentRequest()} onApprove={approveAgentRequest} onAddAttachments={addAgentAttachments} onRemoveAttachment={removeAgentAttachment} onArchive={archiveInboxItemById} onRestore={restoreInboxItemById} onCallMcp={onCallMcp} permissionRequests={{ focusId: focusedRequestId, retryingHash: retryingLinkHash, symbolFor: requestSymbol, onReview: reviewPermissionRequest, onDecline: declinePermissionRequestById, onRetryLink: (record) => void retryPermissionLink(record) }} /> : tab === "protocol" ? <ProtocolPanel wallet={wallet} walletSigner={walletSigner} config={protocolConfig} onCreated={onRefresh} /> : tab === "mandates" ? <MandatesPanel wallet={wallet} walletSigner={walletSigner} walletMessageSigner={walletMessageSigner} mandates={mandates} mandate={mandate} mandateDecimals={mandateDecimals} stablecoinOptions={stablecoinOptions} protocolConfig={protocolConfig} loadStatus={mandateLoadStatus} createOpen={mandateCreateOpen} onCreateOpenChange={(open) => { if (open) openMandateCreate(); else closeMandateBuilder(); }} onMandateAction={runMandateAction} onSelectMandate={onSelectMandate} onOpenPayments={() => selectTab("payments")} onOpenAgents={() => selectTab("agents")} onRefresh={onRefresh} onPermissionRequestCreated={permissionRequestCreated} /> : tab === "payments" ? <PaymentsWorkspace wallet={wallet} history={<ReceiptPanel mandates={mandates} stablecoinOptions={stablecoinOptions} preparedReceiptAddresses={preparedReceiptAddresses} onCallMcp={onCallMcp} />} form={<PaymentPanel wallet={wallet} walletSigner={walletSigner} mandates={mandates} mandate={mandate} stablecoinOptions={stablecoinOptions} onSelectMandate={onSelectMandate} onCallMcp={onCallMcp} onAskAgent={(message) => { selectTab("assistant"); void askChainPay(message); }} onRefresh={onRefresh} onOpenMandateBuilder={openMandateCreate} onOpenAgents={() => selectTab("agents")} />} /> : agentsTabActive ? <AgentsTabPanel connectionStatus={connectionStatus} serverUrl={MCP_URL} wallet={wallet} mandates={mandates} stablecoinOptions={stablecoinOptions} connections={connections} hostedAssistantStatus={hostedAssistantStatus} connectDialogInitiallyOpen={tab === "connect-mcp"} onConnected={(connection) => setConnections((current) => [connection, ...current])} onRevoked={async (id) => { await revokeMcpConnection(wallet, id); setConnections((current) => current.filter((connection) => connection.id !== id)); }} onCreateMandate={openMandateCreate} onOpenAssistant={() => selectTab("assistant")} /> : tab === "receipts" ? <ReceiptPanel mandates={mandates} stablecoinOptions={stablecoinOptions} preparedReceiptAddresses={preparedReceiptAddresses} receiptDetail={receiptDetail} onCallMcp={onCallMcp} /> : tab === "tools" ? <ToolsPanel mcpTools={mcpTools} /> : tab === "settings" ? <SettingsPanel advancedOpen={advancedSettingsOpen} onAdvancedOpenChange={setAdvancedSettingsOpen} onAdvanced={(destination) => selectTab(destination)} wallet={wallet} walletName={walletName} walletIcon={walletIcon} walletCapabilities={walletCapabilities} stablecoinOptions={stablecoinOptions} activeMandateCount={revocableMandateCount} dangerStatus={dangerStatus} onRevokeAll={() => void revokeAllMandates()} onDisconnect={onDisconnect} onChangeWallet={onChangeWallet} /> : (
+          <div>{tab === "cards" ? <CardsArea wallet={wallet} walletSigner={walletSigner} walletMessageSigner={walletMessageSigner} onCallMcp={onCallMcp} mandates={mandates} cardsNew={cardsNew} cardId={cardId} cardSection={cardSection} notice={ownerSignIn.status !== "ready" ? <div className="cp-workspace-signin is-compact"><div><p>Sign in to load your cards. A login message is not a spending approval.</p></div>{ownerSignIn.error && <p role="alert">{ownerSignIn.error}</p>}</div> : undefined} onNavigate={(target) => { setMobileNav(false); onTabChange("cards", target); }} /> : tab === "assistant" ? <AssistantPanel prompt={prompt} setPrompt={setPrompt} reply={reply} thinking={thinking} listening={listening} agentToolsUsed={agentToolsUsed} inbox={agentInbox} approvalStatuses={approvalStatuses} approvalErrors={approvalErrors} attachments={agentAttachments} attachmentError={attachmentError} stablecoinOptions={stablecoinOptions} mandateDecimals={mandateDecimals} mandate={mandate} sessionReady={ownerSignIn.status === "ready"} onSignIn={() => void ownerSignIn.signIn()} onAsk={() => void askChainPay()} onVoice={startVoice} onLoadDemoInvoice={() => void loadDemoPaymentRequest()} onApprove={approveAgentRequest} onAddAttachments={addAgentAttachments} onRemoveAttachment={removeAgentAttachment} onArchive={archiveInboxItemById} onRestore={restoreInboxItemById} onCallMcp={onCallMcp} permissionRequests={{ focusId: focusedRequestId, retryingHash: retryingLinkHash, symbolFor: requestSymbol, onReview: reviewPermissionRequest, onDecline: declinePermissionRequestById, onRetryLink: (record) => void retryPermissionLink(record) }} /> : tab === "protocol" ? <ProtocolPanel wallet={wallet} walletSigner={walletSigner} config={protocolConfig} onCreated={onRefresh} /> : tab === "mandates" ? <MandatesPanel wallet={wallet} walletSigner={walletSigner} walletMessageSigner={walletMessageSigner} mandates={mandates} mandate={mandate} mandateDecimals={mandateDecimals} stablecoinOptions={stablecoinOptions} protocolConfig={protocolConfig} loadStatus={mandateLoadStatus} createOpen={mandateCreateOpen} onCreateOpenChange={(open) => { if (open) openMandateCreate(); else closeMandateBuilder(); }} onMandateAction={runMandateAction} onSelectMandate={onSelectMandate} onOpenPayments={() => selectTab("payments")} onOpenAgents={() => selectTab("agents")} onRefresh={onRefresh} onPermissionRequestCreated={permissionRequestCreated} /> : tab === "payments" ? <PaymentsWorkspace wallet={wallet} history={<ReceiptPanel mandates={mandates} stablecoinOptions={stablecoinOptions} preparedReceiptAddresses={preparedReceiptAddresses} onCallMcp={onCallMcp} />} form={<PaymentPanel wallet={wallet} walletSigner={walletSigner} mandates={mandates} mandate={mandate} stablecoinOptions={stablecoinOptions} onSelectMandate={onSelectMandate} onCallMcp={onCallMcp} onAskAgent={(message) => { selectTab("assistant"); void askChainPay(message); }} onRefresh={onRefresh} onOpenMandateBuilder={openMandateCreate} onOpenAgents={() => selectTab("agents")} />} /> : agentsTabActive ? <AgentsTabPanel connectionState={connectionState} onSignIn={() => void ownerSignIn.signIn()} onRetry={() => setConnectionsVersion((value) => value + 1)} serverUrl={MCP_URL} wallet={wallet} mandates={mandates} stablecoinOptions={stablecoinOptions} connections={connections} hostedAssistantStatus={hostedAssistantStatus} connectDialogInitiallyOpen={tab === "connect-mcp"} onConnected={(connection) => setConnections((current) => [connection, ...current])} onRevoked={async (id) => { await revokeMcpConnection(wallet, id); setConnections((current) => current.filter((connection) => connection.id !== id)); }} onCreateMandate={openMandateCreate} onOpenAssistant={() => selectTab("assistant")} /> : tab === "receipts" ? <ReceiptPanel mandates={mandates} stablecoinOptions={stablecoinOptions} preparedReceiptAddresses={preparedReceiptAddresses} receiptDetail={receiptDetail} onCallMcp={onCallMcp} /> : tab === "tools" ? <ToolsPanel mcpTools={mcpTools} /> : tab === "settings" ? <SettingsPanel advancedOpen={advancedSettingsOpen} onAdvancedOpenChange={setAdvancedSettingsOpen} onAdvanced={(destination) => selectTab(destination)} wallet={wallet} walletName={walletName} walletIcon={walletIcon} walletCapabilities={walletCapabilities} stablecoinOptions={stablecoinOptions} activeMandateCount={revocableMandateCount} dangerStatus={dangerStatus} onRevokeAll={() => void revokeAllMandates()} onDisconnect={onDisconnect} onChangeWallet={onChangeWallet} /> : (
             <>
               {integrationStatus === "loading" ? (
                 <section className="dashboard-card"><span className="section-kicker">LOADING PERMISSIONS</span><h2>Reading on-chain mandates…</h2><p className="t-body">ChainPay is discovering spending permissions for this wallet. First-run setup appears only after a successful read returns zero mandates.</p></section>
@@ -2756,7 +2757,9 @@ function ReceiptPanel({ mandates, stablecoinOptions, preparedReceiptAddresses, r
 }
 
 function AgentsTabPanel({
-  connectionStatus,
+  connectionState,
+  onSignIn,
+  onRetry,
   serverUrl,
   wallet,
   mandates,
@@ -2769,7 +2772,9 @@ function AgentsTabPanel({
   onCreateMandate,
   onOpenAssistant,
 }: {
-  connectionStatus: "idle" | "loading" | "ready" | "error";
+  connectionState: CollectionStateKind;
+  onSignIn: () => void;
+  onRetry: () => void;
   serverUrl: string;
   wallet: string;
   mandates: Mandate[];
@@ -2789,10 +2794,10 @@ function AgentsTabPanel({
 
   return (
     <section className="page-panel agents-tab-panel">
-      {connectionStatus === "error" && <p role="alert" className="builder-error">Agent connections could not be refreshed. Showing the last available records.</p>}
-      {connectionStatus === "loading" && <p role="status">Refreshing agent connections…</p>}
-
       <ConnectMcpPanel
+        connectionState={connectionState}
+        onSignIn={onSignIn}
+        onRetry={onRetry}
         serverUrl={serverUrl}
         wallet={wallet}
         mandates={mandates}
@@ -2969,7 +2974,7 @@ function ToolsPanel({ mcpTools }: { mcpTools: McpTool[] }) {
 }
 
 
-function ConnectMcpPanel({ serverUrl, wallet, mandates, stablecoinOptions, connections, dialogOpen, onDialogOpenChange, onConnected, onRevoked, onCreateMandate }: { serverUrl: string; wallet: string; mandates: Mandate[]; stablecoinOptions: StablecoinOption[]; connections: AgentConnection[]; dialogOpen?: boolean; onDialogOpenChange?: (open: boolean) => void; onConnected: (connection: AgentConnection) => void; onRevoked: (id: string) => Promise<void>; onCreateMandate: () => void }) {
+function ConnectMcpPanel({ connectionState = "loaded", onSignIn, onRetry, serverUrl, wallet, mandates, stablecoinOptions, connections, dialogOpen, onDialogOpenChange, onConnected, onRevoked, onCreateMandate }: { connectionState?: CollectionStateKind; onSignIn?: () => void; onRetry?: () => void; serverUrl: string; wallet: string; mandates: Mandate[]; stablecoinOptions: StablecoinOption[]; connections: AgentConnection[]; dialogOpen?: boolean; onDialogOpenChange?: (open: boolean) => void; onConnected: (connection: AgentConnection) => void; onRevoked: (id: string) => Promise<void>; onCreateMandate: () => void }) {
   const ownedAddresses = ownedMandateAddresses(mandates, wallet);
   const ownedMandates = mandates.filter((mandate) => ownedAddresses.includes(mandate.address));
   const mandateOptions = mandates
@@ -3058,11 +3063,8 @@ function ConnectMcpPanel({ serverUrl, wallet, mandates, stablecoinOptions, conne
   }
 
   return <section className="page-panel connect-panel">
-    {connectionToken && connectionHandoff && <section className="dashboard-card connection-config-card">
-      <div className="dashboard-card-heading">
-        <h2>Finish connecting {connectionName}</h2>
-        <span className="owner-status">Ready to paste</span>
-      </div>
+    {connectionToken && connectionHandoff && <section className="cp-surface connection-config-card">
+      <SectionHeader title={`Finish connecting ${connectionName}`} action={<Status {...statusFor("pending", "Ready to paste")} />} />
       <p className="connection-handoff-intro">Paste the configuration into any MCP client, then send the first prompt so the agent inspects your permission before spending.</p>
       <div className="connection-handoff-scope">
         <span className="section-kicker">THIS CONNECTION</span>
@@ -3082,7 +3084,42 @@ function ConnectMcpPanel({ serverUrl, wallet, mandates, stablecoinOptions, conne
       <details className="technical-details"><summary>View first prompt</summary><pre className="schema-block connection-prompt-block">{firstPrompt}</pre></details>
       <p className="connection-safety-note" role="note"><ShieldCheck className="shield-icon" aria-hidden /> Never paste the connection token into chat, commits, or public prompts. Revoke and recreate if it leaks.</p>
     </section>}
-    <div className="dashboard-card connected-clients-card"><div className="dashboard-card-heading"><h2>Connected agents</h2><Button type="button" variant="primary" label="Connect agent" icon={<Plus size={18} />} onClick={() => { setAllowPayments(false); setDialogOpen(true); }} /></div>{connections.length ? <div className="connection-list">{connections.map((connection) => <article className="owner-connection" key={connection.id}><div className="owner-connection-heading"><span className="owner-row-icon neutral"><Bot /></span><div><h3>{connection.agentName}</h3><p>{connectionSeenLabel(connection.lastSeenAt)}</p></div><span className={`owner-status ${connectionIsLive(connection.lastSeenAt) ? "good" : ""}`}>{connectionIsLive(connection.lastSeenAt) ? "Connected" : "Configured"}</span><Button variant="ghost" label={`Revoke ${connection.agentName}`} onClick={() => setRevokeId(connection.id)} /></div><p>{connectionScopeDetails(connection.scope).label}</p><details className="technical-details"><summary>Connection details and activity</summary><p>Owner: {connection.wallet}</p><p>{connection.mandates} associated spending permission{connection.mandates === 1 ? "" : "s"}</p><div className="connection-tools">{connection.toolsCalled.length ? connection.toolsCalled.map((tool) => <span className="tool-call-chip" key={tool.name}>{tool.name} <b>×{tool.count}</b></span>) : <span>No tool activity recorded.</span>}</div></details></article>)}</div> : <div className="owner-small-empty"><Bot /><h3>Your agents will appear here</h3><p>Connect an agent and choose the spending permission it can use.</p></div>}</div>
+    <section className="cp-surface connected-clients-card" aria-labelledby="connected-agents-title">
+      <SectionHeader id="connected-agents-title" title="Connected agents" description="Each agent connects through MCP and can use only the permission you assign." action={<Button type="button" variant="primary" label="Connect agent" icon={<Plus size={18} />} onClick={() => { setAllowPayments(false); setDialogOpen(true); }} />} />
+      <CollectionState
+        state={connectionState}
+        noun="agents"
+        title={connectionState === "empty" ? "No agents connected yet" : connectionState === "partial" ? "Agent connections couldn’t be refreshed" : undefined}
+        description={connectionState === "signed-out"
+          ? "Your agent connections load after you sign in. Signing in is not a spending approval."
+          : connectionState === "failed" ? "The connection list couldn’t be read. Nothing was changed."
+          : connectionState === "partial" ? "Showing the last records that loaded."
+          : "Name the agent, pick the spending permission it may use, then paste the configuration into your MCP client."}
+        action={connectionState === "signed-out" && onSignIn ? <Button type="button" variant="secondary" label="Sign in" onClick={onSignIn} /> : undefined}
+        icon={connectionState === "empty" ? Bot : undefined}
+        onRetry={onRetry}
+        rows={2}
+      >
+        <ul className="cp-agent-list">
+          {connections.map((connection) => (
+            <li className="owner-connection cp-agent-row" key={connection.id}>
+              <span className="cp-row-icon" aria-hidden="true"><Bot size={18} /></span>
+              <div className="cp-agent-main">
+                <h3>{connection.agentName}</h3>
+                <p>{connectionSeenLabel(connection.lastSeenAt)}</p>
+              </div>
+              <div className="cp-agent-scope">
+                <span className="cp-agent-label">Assigned</span>
+                <span>{connectionScopeDetails(connection.scope).label}</span>
+              </div>
+              <Status {...connectionStatusProps(connection)} />
+              <Button variant="ghost" label="Revoke" aria-label={`Revoke ${connection.agentName}`} onClick={() => setRevokeId(connection.id)} />
+              <details className="technical-details cp-agent-details"><summary>Connection details and activity</summary><p>Owner: <span className="mono">{connection.wallet}</span></p><p>{connection.mandates} associated spending permission{connection.mandates === 1 ? "" : "s"} · {connection.totalCalls} tool call{connection.totalCalls === 1 ? "" : "s"}</p><div className="connection-tools">{connection.toolsCalled.length ? connection.toolsCalled.map((tool) => <span className="tool-call-chip" key={tool.name}>{tool.name} <b>×{tool.count}</b></span>) : <span>No tool activity recorded.</span>}</div></details>
+            </li>
+          ))}
+        </ul>
+      </CollectionState>
+    </section>
     <Dialog isOpen={isDialogOpen} onOpenChange={(open) => { if (!open) closeDialog(); else setDialogOpen(true); }} purpose="form" width={480}>
       <Layout
         height="auto"
