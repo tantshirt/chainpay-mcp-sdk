@@ -326,16 +326,21 @@ if (SIGNED_IN && !FIXTURE_APPROVAL) {
   void ensureSessionReady();
 }
 
-// Cards: `?tab=cards[&cards=empty|locked][&card=data|research|travel][&section=…][&new=1][&statement=<state>][&ack=1][&attest=verified|challenge_bound|mismatch|failed]`.
+// Cards: `?tab=cards[&cards=empty|locked][&card=data|research|travel][&section=…][&new=1][&statement=<state>][&ack=1][&attest=verified|challenge_bound|mismatch|failed][&repay=unknown][&restore=tampered][&reads=unreadable]`.
 // ILLUSTRATIVE fixtures through the same CardsSource interface the live SDK
 // client implements. Nothing signs or reaches a network.
 const CARD_QUERY = new URLSearchParams(location.search);
+// Statement repayment needs a permission the owner signs: add one only for that view.
+if (CARD_QUERY.has("repay")) MANDATES.push(mandate({ address: "MdT4dddddddddddddddddddddddddddddddddddddddd", approvedAgent: OWNER, amountSpent: 0n, paymentCount: 0n }));
 const fixtureCards = createFixtureCardsSource({
   empty: CARD_QUERY.get("cards") === "empty" || (EMPTY && SIGNED_IN),
   unlocked: CARD_QUERY.get("cards") !== "locked",
   statement: (CARD_QUERY.get("statement") as never) ?? undefined,
   freezeAck: CARD_QUERY.has("ack"),
   attestation: (CARD_QUERY.get("attest") as never) ?? undefined,
+  repay: (CARD_QUERY.get("repay") as never) ?? undefined,
+  restore: (CARD_QUERY.get("restore") as never) ?? undefined,
+  reads: (CARD_QUERY.get("reads") as never) ?? undefined,
 });
 setCardsSourceOverride(FAIL ? { ...fixtureCards, listCards: async () => { throw new Error("Fixture: cards unavailable"); } } : fixtureCards);
 const CARD_KEY = CARD_QUERY.get("card") as keyof typeof FIXTURE_CARD_IDS | null;
