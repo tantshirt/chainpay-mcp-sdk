@@ -49,7 +49,7 @@ try {
         ["Mad Lads #1234 (again)", "Nothing new was submitted."],
       ]) {
         const row = await expand(title);
-        assert.equal(await row.locator(".owner-status").textContent(), "Blocked");
+        assert.equal(await row.locator(".owner-request-summary .cp-status").textContent(), "Blocked");
         assert.ok((await row.innerText()).includes(detail));
         assert.equal(await row.locator(".agent-approval-card").count(), 0, `${title}: flag=${enabled}`);
         assert.equal(await row.getByRole("button", { name: "Approve payment in wallet", exact: true }).count(), 0);
