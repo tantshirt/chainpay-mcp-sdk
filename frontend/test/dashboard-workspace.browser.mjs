@@ -6,6 +6,8 @@
 // payment evidence.
 //
 // WORKSPACE_ONLY=matrix,zoom,… runs only the named sections (for local iteration).
+// WORKSPACE_PROBE_CSS="<css>" injects CSS after every page load, to prove a guard
+// fails on a reintroduced defect (mutation probe). Never set in CI.
 import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
 import { BASE_URL, blockExternal, launchBrowser } from "./browser/_helpers.mjs";
@@ -34,11 +36,14 @@ const errors = [];
 page.on("pageerror", (error) => errors.push(error.message));
 await blockExternal(page);
 
+const PROBE_CSS = process.env.WORKSPACE_PROBE_CSS || "";
+
 async function open(query, target = page) {
   await target.goto(harness(query));
   await target.locator("h1").first().waitFor();
   // Let metadata, fixture sessions and fixture reads settle.
   await target.waitForFunction(() => !document.querySelector(".dashboard-app [aria-busy='true'] .cp-amount-skeleton, .cp-collection-state.is-loading"), null, { timeout: 8000 }).catch(() => {});
+  if (PROBE_CSS) await target.addStyleTag({ content: PROBE_CSS });
   await target.waitForTimeout(250);
 }
 
@@ -54,11 +59,8 @@ async function shortControls(target = page) {
     return [...document.querySelectorAll(`.dashboard-app ${selector.split(", ").join(", .dashboard-app ")}`)]
       .map((el) => ({ el, box: el.getBoundingClientRect(), style: getComputedStyle(el) }))
       .filter(({ el, box, style }) => box.width > 4 && box.height > 0 && style.visibility !== "hidden" && el.offsetParent !== null)
-      .filter(({ el, box }) => {
-        if (box.height >= 43.5) return false;
-        // A summary inside an inline raw-units disclosure keeps a 44px min-height with negative margins; measure that.
-        return parseFloat(getComputedStyle(el).minHeight) < 44;
-      })
+      // The rendered box is what a finger hits: no exemption for a min-height that may not apply (inline boxes ignore it).
+      .filter(({ box }) => box.height < 43.5)
       .map(({ el, box }) => `${el.tagName.toLowerCase()}.${[...el.classList].filter((c) => !/^x[0-9a-z]{5,8}$/.test(c)).slice(0, 3).join(".")} "${(el.getAttribute("aria-label") || el.textContent || "").trim().slice(0, 30)}" ${Math.round(box.height)}px`);
   });
 }
@@ -209,9 +211,23 @@ section("matrix", async () => {
         // Visually hidden text never renders as visible copy.
         const leakedSrText = await page.locator(".dashboard-page .sr-only, .dashboard-page [class*='sr-only']").evaluateAll((els) => els.filter((el) => el.getBoundingClientRect().width > 1).map((el) => el.textContent));
         assert.deepEqual(leakedSrText, [], `${label}: screen-reader text is visible`);
-        // Every raw-units disclosure looks like one.
-        const rawSummaries = await page.locator(".cp-amount-raw > summary").evaluateAll((els) => els.filter((el) => el.offsetParent).map((el) => Boolean(el.querySelector("svg")) || getComputedStyle(el).display === "list-item"));
-        assert.ok(rawSummaries.every(Boolean), `${label}: a raw-units disclosure has no disclosure cue`);
+        // Every raw-units disclosure looks like one: its chevron is rendered, not merely present.
+        const rawSummaries = await page.locator(".cp-amount-raw > summary").evaluateAll((els) => els.filter((el) => el.offsetParent).map((el) => {
+          const cue = el.querySelector("svg");
+          if (!cue) return false;
+          const box = cue.getBoundingClientRect();
+          const style = getComputedStyle(cue);
+          return box.width > 0 && box.height > 0 && style.visibility !== "hidden" && parseFloat(style.opacity) > 0;
+        }));
+        assert.ok(rawSummaries.every(Boolean), `${label}: a raw-units disclosure has no visible disclosure cue`);
+        if (tab === "overview") await assertClearIsClear(label);
+        if (tab === "assistant") {
+          // One row of request tabs at every width; every tab keeps a 44px target (shortControls) and a name.
+          const tabs = await page.locator(".owner-inbox [role='tab']").evaluateAll((els) => els.map((el) => ({ top: Math.round(el.getBoundingClientRect().top), name: el.textContent.trim() })));
+          assert.equal(tabs.length, 4, `${label}: four request tabs`);
+          assert.equal(new Set(tabs.map((tab) => tab.top)).size, 1, `${label}: request tabs on one row (${tabs.map((tab) => `${tab.name}@${tab.top}`).join(", ")})`);
+          assert.ok(tabs.every((tab) => tab.name.length > 0), `${label}: every request tab is named`);
+        }
         if (state === "unavailable" && tab === "overview") {
           assert.match(text, /Amounts? unavailable/, `${label}: unavailable metadata says so`);
           assert.equal(await page.locator(".cp-usage-ring.is-unavailable").count(), 1, `${label}: dashed ring without a percentage`);
@@ -463,7 +479,12 @@ section("revoked", async () => {
   }
 });
 
-/** Tab from the start of the page body; returns each focused control until focus leaves it. */
+/**
+ * Tab from the start of the page body; returns each focused control until focus leaves it.
+ * `ring` compares the control focused with the same control blurred: a visible
+ * outline or box-shadow that only exists (or changes) on focus. A shadow the
+ * control already wears at rest is not a focus indicator.
+ */
 async function tabOrder(limit = 40) {
   await page.locator(".dashboard-page").evaluate((el) => { el.setAttribute("tabindex", "-1"); el.focus(); el.removeAttribute("tabindex"); });
   const order = [];
@@ -472,9 +493,18 @@ async function tabOrder(limit = 40) {
     const focused = await page.evaluate(() => {
       const el = document.activeElement;
       if (!el || !el.closest(".dashboard-page")) return null;
-      const style = getComputedStyle(el);
       const box = el.getBoundingClientRect();
-      const ring = (style.outlineStyle !== "none" && parseFloat(style.outlineWidth) > 0) || (style.boxShadow && style.boxShadow !== "none");
+      const snapshot = () => {
+        const style = getComputedStyle(el);
+        const outline = style.outlineStyle !== "none" && parseFloat(style.outlineWidth) > 0 ? `${style.outlineStyle} ${style.outlineWidth} ${style.outlineColor} ${style.outlineOffset}` : "none";
+        return { outline, shadow: style.boxShadow || "none" };
+      };
+      const focusedStyle = snapshot();
+      el.blur();
+      const restingStyle = snapshot();
+      el.focus({ focusVisible: true });
+      const ring = (focusedStyle.outline !== "none" && focusedStyle.outline !== restingStyle.outline)
+        || (focusedStyle.shadow !== "none" && focusedStyle.shadow !== restingStyle.shadow);
       return {
         name: (el.getAttribute("aria-label") || el.getAttribute("title") || el.textContent || el.getAttribute("placeholder") || "").trim().replace(/\s+/g, " ").slice(0, 60),
         role: el.getAttribute("role") || el.tagName.toLowerCase(),
@@ -501,6 +531,8 @@ function assertInOrder(names, expected, label) {
 // 7. Keyboard: tab order, visible focus, panel focus restoration, Pause stays reachable.
 section("keyboard", async () => {
   await page.setViewportSize({ width: 1440, height: 1000 });
+  // Styles are compared focused vs blurred, so no transition may be mid-flight.
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await open(`tab=overview&${POPULATED}`);
   const overview = await tabOrder(60);
   for (const stop of overview) {
@@ -565,6 +597,7 @@ section("keyboard", async () => {
   await page.waitForTimeout(250);
   assert.equal(await second.evaluate((el) => el === document.activeElement), true, "Close returns focus to the row that opened the panel");
   assert.equal(await row.getByRole("button", { name: "Pause", exact: true }).isVisible(), true, "Pause stays visible in the ledger");
+  await page.emulateMedia({ reducedMotion: "no-preference" });
 });
 
 // 8. Real 200% zoom: a 1440px window at 200% is a 720 CSS px viewport at device scale 2.
@@ -618,7 +651,7 @@ section("motion", async () => {
 try {
   for (const [name, fn] of sections) if (run(name)) await fn();
   assert.deepEqual(errors, []);
-  console.log(`PASS: ${sections.filter(([name]) => run(name)).map(([name]) => name).join(", ")} — ${TABS.length} tabs × ${WIDTHS.length} widths × ${Object.keys(STATES).length} states, failed, signed-out, multi-token, verified-clear, revoked, keyboard order and focus restore, real 200% zoom, reduced motion. Screenshots in ${SHOTS}. No financial action.`);
+  console.log(`PASS: ${sections.filter(([name]) => run(name)).map(([name]) => name).join(", ")} — ${TABS.length} tabs × ${WIDTHS.length} widths × ${Object.keys(STATES).length} states, failed, signed-out, multi-token, verified-clear (and cards unchecked), revoked, keyboard order and focus restore, real 200% zoom, reduced motion. Screenshots in ${SHOTS}. No financial action.`);
 } finally {
   await browser.close();
 }
