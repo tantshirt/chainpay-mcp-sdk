@@ -350,7 +350,7 @@ export function connectionScopeDetails(scope: string) {
     const cards = parsed.cards?.length ?? 0;
     // Cards-only connection (agent card): checkout on the named cards, no mandates.
     if (!count && cards) return { count, label: `${cards} agent card${cards === 1 ? "" : "s"} · ${parsed.tools?.includes("request_card_checkout") ? "Card checkout permitted" : "Read only"}` };
-    return { count, label: `${count} mandate${count === 1 ? "" : "s"} · ${parsed.tools?.some(tool => ["execute_payment", "execute_x402_payment"].includes(tool)) ? "Payments permitted" : "Read and prepare"}` };
+    return { count, label: `${count} permission${count === 1 ? "" : "s"} · ${parsed.tools?.some(tool => ["execute_payment", "execute_x402_payment"].includes(tool)) ? "Payments permitted" : "Read and prepare"}` };
   } catch { return { count: 0, label: "Reconnect to select permissions" }; }
 }
 

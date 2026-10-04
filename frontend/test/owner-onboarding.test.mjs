@@ -39,19 +39,23 @@ function installDom() {
   return dom;
 }
 
-test("empty overview copy names the first-mandate path and distinguishes login from approval", async () => {
+test("empty overview copy names the first-permission path and distinguishes login from approval", async () => {
   const onboarding = await loadModule("owner/onboarding.ts");
-  assert.equal(onboarding.FIRST_MANDATE_TITLE, "Set up your first mandate");
+  assert.equal(onboarding.FIRST_MANDATE_TITLE, "Set up your first spending permission");
   assert.deepEqual(onboarding.OWNER_SETUP_STEPS.map((step) => step.label), [
     "Connect wallet",
     "Sign in",
-    "Review mandate",
+    "Review permission",
     "Approve in wallet",
     "Connect an agent",
   ]);
   assert.match(onboarding.OWNER_SETUP_PATH_SUMMARY, /Connect an agent/);
   assert.match(onboarding.LOGIN_VS_APPROVAL, /login message/i);
   assert.match(onboarding.LOGIN_VS_APPROVAL, /wallet transaction/i);
+  // Owner surfaces name the thing a spending permission, never a mandate.
+  for (const copy of [onboarding.FIRST_MANDATE_TITLE, onboarding.OWNER_SETUP_PATH_SUMMARY, onboarding.LOGIN_VS_APPROVAL, ...onboarding.OWNER_SETUP_STEPS.flatMap((step) => [step.label, step.detail])]) {
+    assert.doesNotMatch(copy, /\bmandates?\b/i, copy);
+  }
   assert.equal(onboarding.EMPTY_OWNER_ACTIVITY, "No payments for this wallet yet.");
   assert.equal(onboarding.configuredDemoReceiptPath(""), null);
   assert.equal(onboarding.configuredDemoReceiptPath("not-a-pda"), null);
@@ -240,7 +244,8 @@ test("EmptyOwnerOverview renders the setup path without a live wallet transactio
     const text = host.textContent ?? "";
     assert.match(text, /Your wallet is connected/);
     assert.match(text, /Sign in/);
-    assert.match(text, /Review mandate/);
+    assert.match(text, /Review permission/);
+    assert.doesNotMatch(text, /\bmandate\b/i, "owner copy says permission");
     assert.match(text, /Approve in wallet/);
     assert.match(text, /Connect an agent/);
     assert.match(text, /login message/);
@@ -254,8 +259,9 @@ test("EmptyOwnerOverview renders the setup path without a live wallet transactio
     assert.equal(signedIn, 1, "sign-in requires the user's action");
     await act(async () => { reactRoot.render(createElement(EmptyOwnerOverview, { ...props, signedIn: true })); });
     assert.match(host.querySelector('[aria-current="step"]').textContent, /Limits/);
-    assert.equal(reviewed, 0, "sign-in does not open or approve a mandate");
-    const review = [...host.querySelectorAll("button")].find((button) => /Review mandate/i.test(button.textContent ?? ""));
+    assert.equal(reviewed, 0, "sign-in does not open or approve a permission");
+    assert.doesNotMatch(host.textContent ?? "", /\bmandate\b/i, "owner copy says permission");
+    const review = [...host.querySelectorAll("button")].find((button) => /Review permission/i.test(button.textContent ?? ""));
     assert.ok(review);
     await act(async () => { review.click(); });
     assert.equal(reviewed, 1);
