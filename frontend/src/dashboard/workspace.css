@@ -1307,6 +1307,22 @@ body:has(.dashboard-app) .wallet-asset-popover { position: static; width: 100%; 
 .cp-overview-stack { display: grid; gap: 24px; min-width: 0; }
 .cp-overview-attention .cp-row-link { margin-left: 4px; }
 
+/* Spending beside the counts once the page is wide enough, so one token's figures
+   don't leave the right half of a full-width card empty (council round 2). */
+.dashboard-app.cp-app .cp-overview { container: cp-overview / inline-size; }
+.cp-overview-summary { display: grid; gap: 24px; min-width: 0; }
+@container cp-overview (min-width: 1000px) {
+  .cp-overview-summary.has-spending { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); align-items: stretch; }
+  .cp-overview-summary.has-spending .cp-overview-counts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* "Expiry not checked" / "Cards not checked": the pills keep their own column and
+   the sentence wraps beside them, not back under the pill. */
+.cp-check-note { display: flex; align-items: baseline; gap: 8px 12px; flex-wrap: wrap; }
+.cp-check-note-pills { display: flex; flex-wrap: wrap; gap: 8px; flex: none; max-width: 100%; }
+.cp-check-note-text { flex: 1 1 16rem; min-width: 0; }
+.dashboard-app.cp-app .cp-overview-attention .cp-check-note { margin-top: 16px; font: 400 13px/18px Inter, sans-serif; color: var(--ws-ink-secondary); }
+
 @media (max-width: 1100px) {
   .cp-overview-counts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cp-overview-columns { grid-template-columns: minmax(0, 1fr); }

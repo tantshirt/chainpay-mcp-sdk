@@ -26,7 +26,7 @@ const { formatDisplayAmount } = await loadModule("src/ui/amount/formatDisplayAmo
 const { createMintMetadataStore, mintMetadataKey } = await loadModule("src/ui/amount/mintMetadataStore.ts");
 const { totalsByMint, usageRing } = await loadModule("src/dashboard/overview/spending.ts");
 const { deriveCollectionState, knownCount } = await loadModule("src/ui/workspace/collectionModel.ts");
-const { summarizeCards } = await loadModule("src/dashboard/overview/cardsSummary.ts");
+const { summarizeCards, cardsAttention } = await loadModule("src/dashboard/overview/cardsSummary.ts");
 
 const deferred = () => { let resolve, reject; const promise = new Promise((a, b) => { resolve = a; reject = b; }); return { promise, resolve, reject }; };
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -196,4 +196,32 @@ test("cards summary counts lifecycle states and carries no amounts", () => {
   assert.equal(JSON.stringify(summary).includes("999999"), false, "no private amounts leave the adapter");
   assert.deepEqual(Object.keys(summary).sort(), ["lifecycle", "total"]);
   assert.deepEqual(summarizeCards([]), { total: 0, lifecycle: [] });
+});
+
+test("cards attention: restore, unconfirmed and pending freezes need the owner; unread is never clear", () => {
+  const card = (over) => ({ cardId: "c", label: "x", lastFour: "4242", issuerState: "OPEN", mirror: { state: "acknowledged" }, freeze: { onChain: false, issuer: "confirmed" }, ...over });
+  const loaded = (cards, illustrative = false) => { const summary = summarizeCards(cards); return { state: summary.total ? "loaded" : "empty", summary, illustrative }; };
+
+  const mixed = cardsAttention(loaded([
+    card({}),
+    card({ freeze: { onChain: true, issuer: "pending_issuer_confirmation" } }),
+    card({ recovery: { state: "recovery_frozen" } }),
+    card({ recovery: { state: "restored_pending_reconcile" } }),
+    card({ freeze: { onChain: true, issuer: "failed" } }),
+    card({ freeze: { onChain: true, issuer: "confirmed" } }),
+  ], true));
+  assert.equal(mixed.status, "checked");
+  assert.equal(mixed.illustrative, true);
+  assert.deepEqual(mixed.items.map((row) => [row.key, row.count]), [["needs_restore", 2], ["freeze_failed", 1], ["freeze_pending", 1]], "most urgent first; active and frozen need nothing");
+  assert.deepEqual(mixed.items.map((row) => row.tone), ["warning", "critical", "info"], "same tones as the Cards area");
+
+  const calm = cardsAttention(loaded([card({}), card({ freeze: { onChain: true, issuer: "confirmed" } })]));
+  assert.deepEqual(calm, { status: "checked", items: [], illustrative: false }, "active and frozen cards are checked and clear");
+  assert.deepEqual(cardsAttention(loaded([])), { status: "checked", items: [], illustrative: false }, "no cards is a checked clear");
+  assert.deepEqual(cardsAttention({ state: "not-enabled" }), { status: "checked", items: [], illustrative: false }, "cards switched off: nothing to check");
+
+  assert.deepEqual(cardsAttention({ state: "failed" }), { status: "unchecked", reason: "failed", items: [] }, "an unreadable list is not clear");
+  assert.deepEqual(cardsAttention({ state: "signed-out" }), { status: "unchecked", reason: "signed-out", items: [] }, "signed out is not clear");
+  assert.deepEqual(cardsAttention({ state: "loading" }), { status: "pending", items: [] }, "still reading is not clear yet");
+  assert.deepEqual(cardsAttention({ state: "surprise" }), { status: "unchecked", reason: "failed", items: [] }, "an unknown state is not clear");
 });

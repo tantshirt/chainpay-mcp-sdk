@@ -152,6 +152,28 @@ async function assertClean(label, target = page) {
   assert.deepEqual(await shortControls(target), [], `${label}: controls under 44px`);
 }
 
+/** "Nothing needs your attention" never shares the page with a status that needs the owner. */
+async function assertClearIsClear(label, target = page) {
+  if (await target.locator(".cp-overview-clear[data-state='clear']").count() === 0) return;
+  const alarming = await target.locator(".dashboard-page .cp-status").evaluateAll((els) => els.filter((el) => ["warning", "critical"].includes(el.dataset.tone)).map((el) => el.textContent.trim()));
+  assert.deepEqual(alarming, [], `${label}: all-clear shown beside ${alarming.join(", ")}`);
+}
+
+/** Unchecked inputs: the sentence keeps its own column beside the pills, or sits wholly below them; never wraps back under a pill. */
+async function assertCheckNotes(label, target = page) {
+  const notes = await target.locator(".cp-check-note").evaluateAll((els) => els.map((el) => {
+    const pills = el.querySelector(".cp-check-note-pills")?.getBoundingClientRect();
+    const text = el.querySelector(".cp-check-note-text");
+    if (!pills || !text) return { ok: false, why: "no pill or text column" };
+    const lines = [...text.getClientRects()];
+    const box = text.getBoundingClientRect();
+    const beside = box.left >= pills.right - 0.5;
+    const below = box.top >= pills.bottom - 0.5;
+    return { ok: (beside || below) && lines.length >= 1, why: `text ${Math.round(box.left)},${Math.round(box.top)} vs pills right ${Math.round(pills.right)} bottom ${Math.round(pills.bottom)}` };
+  }));
+  for (const note of notes) assert.ok(note.ok, `${label}: "not checked" sentence wraps under its pill (${note.why})`);
+}
+
 /** The Requests count in the sidebar, the Overview tile and the Requests tab agree. */
 async function requestCounts() {
   const badge = await page.locator(".dashboard-sidebar .tool-count").allInnerTexts();
@@ -228,6 +250,19 @@ section("matrix", async () => {
           const labelTops = await page.locator(".cp-figure dt").evaluateAll((els) => els.map((el) => [Math.round(el.getBoundingClientRect().top), Math.round(el.parentElement.getBoundingClientRect().top)]));
           for (const [top, rowTop] of labelTops) assert.equal(top, rowTop, `${label}: figure label sits at the top of its figure`);
           if (width === 1440) assert.equal(new Set(labelTops.map(([top]) => top)).size, 1, `${label}: figure labels on one line`);
+          // Cards that need the owner are attention items, so the attention list and the Cards panel agree.
+          const attentionText = await page.locator(".cp-overview-attention").innerText();
+          assert.match(attentionText, /1 card needs restore/, `${label}: a card that needs restore is an attention item`);
+          assert.match(attentionText, /Freeze pending on 1 card/, `${label}: a pending card freeze is an attention item`);
+          assert.match(await page.locator(".cp-overview-attention .cp-section-header").innerText(), /5 items/, `${label}: attention counts requests, expiring permissions and cards`);
+          const summary = await page.locator(".cp-overview-summary").evaluate((el) => {
+            const spending = el.querySelector(".cp-overview-spending").getBoundingClientRect();
+            const counts = el.querySelector(".cp-overview-counts").getBoundingClientRect();
+            return { spendingRight: spending.right, countsLeft: counts.left, sameRow: Math.abs(spending.top - counts.top) < 1 };
+          });
+          // Wide: the counts sit beside a single token's spending, so the card has no empty right half.
+          if (width === 1440) assert.ok(summary.sameRow && summary.countsLeft > summary.spendingRight, `${label}: counts sit beside the spending card`);
+          else assert.equal(summary.sameRow, false, `${label}: spending and counts stack below the wide layout`);
           if (width === 1440) {
             const counts = await requestCounts();
             assert.equal(counts.badge, counts.tile, `${label}: sidebar Requests badge ${counts.badge} matches Open requests ${counts.tile}`);
@@ -307,6 +342,8 @@ section("failed", async () => {
     assert.match(overview, /expiry couldn’t be checked/);
     assert.match(overview, /Couldn’t load your agents/);
     assert.match(overview, /Couldn’t load your cards/);
+    assert.match(overview, /Cards not checked/, "an unreadable cards list is not counted as clear");
+    await assertCheckNotes(`overview failed ${width}`);
     await assertClean(`overview failed ${width}`);
     await page.screenshot({ path: `${SHOTS}/overview-failed-${width}.png`, fullPage: true });
 
@@ -336,6 +373,11 @@ section("signed-out", async () => {
     await open("tab=overview");
     assert.equal((await page.locator(".cp-count").filter({ hasText: "Connected agents" }).locator(".cp-count-value").innerText()).trim(), "—");
     assert.match(await page.locator(".cp-count").filter({ hasText: "Connected agents" }).innerText(), /Sign in to see/);
+    const signedOut = await page.locator(".dashboard-page").innerText();
+    assert.doesNotMatch(signedOut, /Counts only/, `overview signed-out ${width}: no counts footnote under a sign-in prompt`);
+    assert.doesNotMatch(signedOut, /Nothing needs your attention/, `overview signed-out ${width}: unread cards are not clear`);
+    assert.match(signedOut, /Cards not checked/);
+    await assertCheckNotes(`overview signed-out ${width}`);
     await assertClean(`overview signed-out ${width}`);
     await page.screenshot({ path: `${SHOTS}/overview-signed-out-${width}.png`, fullPage: true });
   }
@@ -379,8 +421,21 @@ section("clear", async () => {
     assert.equal(await clear.count(), 1, `${label}: one verified-clear line`);
     assert.match(await clear.innerText(), /Nothing needs your attention/);
     assert.equal(await clear.locator(".cp-status").getAttribute("data-icon"), "check-circle");
+    await assertClearIsClear(label);
     await assertClean(label);
     await page.screenshot({ path: `${SHOTS}/overview-clear-${width}.png`, fullPage: true });
+
+    // Everything else clear, but the card list can't be read: not an all-clear.
+    await open("tab=overview&signed-in=fixture&decimals=fixture&slot=fixture&receipts&clear=1&cards=fail");
+    const partial = `overview clear, cards unreadable ${width}`;
+    assert.equal(await page.locator(".cp-overview-clear[data-state='clear']").count(), 0, `${partial}: no verified-clear line`);
+    const note = page.locator(".cp-overview-clear[data-state='partial']");
+    assert.match(await note.innerText(), /Cards not checked/, `${partial}: says the cards were not checked`);
+    assert.doesNotMatch(await note.innerText(), /Expiry not checked/, `${partial}: expiry was checked`);
+    assert.match(await note.innerText(), /[Yy]our cards couldn’t be read/);
+    await assertCheckNotes(partial);
+    await assertClean(partial);
+    await page.screenshot({ path: `${SHOTS}/overview-cards-unchecked-${width}.png`, fullPage: true });
   }
 });
 

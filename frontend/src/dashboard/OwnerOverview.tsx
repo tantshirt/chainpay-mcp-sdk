@@ -21,14 +21,16 @@ import { Status, statusFor } from "../ui/workspace/Status";
 import { activityStatus, connectionStatusProps, requestStageStatus } from "./workspaceStatus";
 import { totalsByMint, usageRing } from "./overview/spending";
 import { UsageRing } from "./overview/UsageRing";
-import type { CardsSummaryState } from "./overview/useCardsSummary";
+import { cardsAttention, type CardsLifecycleCount, type CardsSummaryState } from "./overview/cardsSummary";
 
 /*
   Overview (EXPERIENCE.md, 2026-10-04):
   1. Spending by token: spent, remaining allowance and limit beside the one ring.
   2. Operational counts: permissions, agents, requests, cards.
-  3. Attention items when real (promoted to the top); otherwise one slim line,
-     and "clear" only when every input was actually checked.
+  3. Attention items when real (promoted to the top): requests, permissions
+     expiring within a day, and cards that need restore or whose freeze is
+     pending or unconfirmed. Otherwise one slim line, and "clear" only when
+     every input (expiry and the cards list) was actually checked.
   4. Recent activity beside agents and cards.
 */
 export type OwnerOverviewProps = {
@@ -72,7 +74,15 @@ export function OwnerOverview({ mandates, connections, connectionState, attentio
   const expiring = expiryChecked && slot.value !== null && soon !== null
     ? activePermissions.filter((mandate) => mandate.expiresAtSlot > slot.value! && mandate.expiresAtSlot - slot.value! <= soon)
     : [];
-  const attentionCount = attention.length + expiring.length;
+  const cardCheck = cardsAttention(cards);
+  const cardItems = cardCheck.items;
+  const attentionCount = attention.length + expiring.length + cardItems.reduce((sum, row) => sum + row.count, 0);
+  // What could not be checked, so neither the list nor the clear line can claim to be complete.
+  const unchecked: Unchecked[] = [
+    ...(!expiryChecked && !expiryPending ? [{ key: "expiry", label: "Expiry not checked", what: "permission expiry couldn’t be checked right now" }] : []),
+    ...(cardCheck.status === "unchecked" ? [{ key: "cards", label: "Cards not checked", what: cardCheck.reason === "signed-out" ? "cards load after you sign in" : "your cards couldn’t be read" }] : []),
+  ];
+  const checksPending = expiryPending || cardCheck.status === "pending";
 
   const attentionSection = attentionCount > 0 && (
     <section className="cp-surface cp-overview-attention" aria-labelledby="overview-attention-title">
@@ -98,25 +108,32 @@ export function OwnerOverview({ mandates, connections, connectionState, attentio
             </button>
           </li>
         ))}
+        {cardItems.map((row) => (
+          <li key={`card:${row.key}`}>
+            <button type="button" className="cp-row" onClick={onCards}>
+              <span className={`cp-row-icon ${row.tone === "info" ? "is-info" : "is-warning"}`} aria-hidden="true"><CreditCard size={18} /></span>
+              <span className="cp-row-main"><strong>{cardAttentionTitle(row)}</strong><small>{cardCheck.status === "checked" && cardCheck.illustrative ? "Illustrative · " : ""}{CARD_ATTENTION_DETAIL[row.key] ?? "Open Cards to check it."}</small></span>
+              <Status tone={row.tone} icon={row.icon} label={row.label} />
+              <span className="cp-row-link">Review <ArrowRight size={16} aria-hidden="true" /></span>
+            </button>
+          </li>
+        ))}
       </ul>
       {attention.length > 5 && <Button label={`View all ${attention.length} requests`} variant="ghost" onClick={onRequests} />}
-      {!expiryChecked && !expiryPending && <p className="cp-caption" role="status"><Status {...statusFor("unknown", "Expiry not checked")} /> Permission expiry couldn’t be checked right now, so an expiring permission may be missing from this list.</p>}
+      {unchecked.length > 0 && <CheckNote unchecked={unchecked} text={`${sentenceCase(joinParts(unchecked.map((item) => item.what)))}, so something that needs you may be missing from this list.`} />}
     </section>
   );
 
   const clearLine = attentionCount === 0 && (
-    expiryPending ? (
+    checksPending ? (
       <div className="cp-overview-clear" data-state="loading" aria-busy="true"><Skeleton width={220} height={16} /><span className="sr-only">Checking what needs your attention…</span></div>
-    ) : expiryChecked ? (
+    ) : unchecked.length === 0 ? (
       <div className="cp-overview-clear" data-state="clear" role="status">
         <Status {...statusFor("verified", "Nothing needs your attention")} />
         <span>No requests are waiting{activePermissions.length ? " and no active permission expires within a day" : ""}.</span>
       </div>
     ) : (
-      <div className="cp-overview-clear" data-state="partial" role="status">
-        <Status {...statusFor("unknown", "Expiry not checked")} />
-        <span>No requests are waiting in this browser. Permission expiry couldn’t be checked right now, so this isn’t a full all-clear.</span>
-      </div>
+      <CheckNote className="cp-overview-clear" data-state="partial" unchecked={unchecked} text={`No requests are waiting in this browser. ${sentenceCase(joinParts(unchecked.map((item) => item.what)))}, so this isn’t a full all-clear.`} />
     )
   );
 
@@ -134,6 +151,8 @@ export function OwnerOverview({ mandates, connections, connectionState, attentio
     <div className="owner-overview cp-overview">
       {attentionSection}
 
+      {/* Spending and the counts share a row on wide screens, so a single token's card has no empty right half. */}
+      <div className={`cp-overview-summary${selected && ring ? " has-spending" : ""}`}>
       {selected && ring && (
         <section className="cp-surface cp-overview-spending" aria-labelledby="overview-spending-title">
           <SectionHeader id="overview-spending-title" title="Spending by token" description="Across loaded permissions. Each token is totalled on its own." action={<SectionLink label="Manage permissions" onClick={onPermissions} />} />
@@ -190,6 +209,7 @@ export function OwnerOverview({ mandates, connections, connectionState, attentio
           detail={cards.state === "signed-out" ? "Sign in to see" : cards.state === "not-enabled" ? "Not switched on" : cards.state === "failed" ? "Couldn’t load" : cards.state === "loaded" ? `${cards.illustrative ? "Illustrative · " : ""}${cards.summary.lifecycle.map((row) => `${row.count} ${row.label.toLowerCase()}`).join(" · ")}` : cards.state === "empty" ? "None yet" : ""}
         />
       </section>
+      </div>
 
       {clearLine}
 
@@ -262,6 +282,36 @@ export function OwnerOverview({ mandates, connections, connectionState, attentio
       </div>
     </div>
   );
+}
+
+type Unchecked = { key: string; label: string; what: string };
+
+/** Unchecked inputs: the pills sit in their own column and the sentence wraps beside them, never under them. */
+function CheckNote({ unchecked, text, className, ...rest }: { unchecked: Unchecked[]; text: string; className?: string; "data-state"?: string }) {
+  return (
+    <div className={className ? `${className} cp-check-note` : "cp-check-note"} role="status" {...rest}>
+      <span className="cp-check-note-pills">{unchecked.map((item) => <Status key={item.key} {...statusFor("unknown", item.label)} />)}</span>
+      <span className="cp-check-note-text">{text}</span>
+    </div>
+  );
+}
+
+const joinParts = (parts: string[]) => parts.length < 2 ? parts.join("") : `${parts.slice(0, -1).join(", ")} and ${parts[parts.length - 1]}`;
+const sentenceCase = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+
+const CARD_ATTENTION_DETAIL: Record<string, string> = {
+  needs_restore: "Frozen for recovery. Restore it in Cards before an agent can use it.",
+  freeze_failed: "The card network didn’t confirm the freeze. ChainPay keeps declining every purchase.",
+  freeze_pending: "Waiting for the card network to confirm the freeze.",
+};
+
+function cardAttentionTitle(row: CardsLifecycleCount) {
+  const one = row.count === 1;
+  const cards = one ? "1 card" : `${row.count} cards`;
+  if (row.key === "needs_restore") return `${cards} ${one ? "needs" : "need"} restore`;
+  if (row.key === "freeze_failed") return `Freeze not confirmed on ${cards}`;
+  if (row.key === "freeze_pending") return `Freeze pending on ${cards}`;
+  return `${row.label} on ${cards}`;
 }
 
 /** Navigation out of a section: the same blue link-with-arrow as the row actions. */

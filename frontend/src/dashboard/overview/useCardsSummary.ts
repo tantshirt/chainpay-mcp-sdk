@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import type { Transaction } from "@solana/web3.js";
 import { cardsSourceOverride, CardsNotEnabledError, type CardsSource } from "../cards/source";
 import { createLiveCardsSource } from "../cards/liveSource";
-import { summarizeCards, type CardsSummary } from "./cardsSummary";
+import { summarizeCards, type CardsSummaryState } from "./cardsSummary";
+
+export type { CardsSummaryState } from "./cardsSummary";
 
 /*
   Overview's view of Cards, scoped to the connected owner wallet. It uses the
@@ -10,10 +12,6 @@ import { summarizeCards, type CardsSummary } from "./cardsSummary";
   Axum client live) and only ever calls listCards(): counts and lifecycle
   states, nothing behind the private unlock.
 */
-export type CardsSummaryState =
-  | { state: "signed-out" | "loading" | "failed" | "not-enabled"; illustrative?: boolean }
-  | { state: "empty" | "loaded"; summary: CardsSummary; /** The source is example data (the Cards tab shows the same label). */ illustrative: boolean };
-
 type Deps = {
   wallet: string;
   signedIn: boolean;

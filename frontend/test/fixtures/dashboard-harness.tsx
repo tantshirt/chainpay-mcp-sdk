@@ -24,6 +24,8 @@ import Dashboard from "../../src/dashboard/Dashboard";
 import type { CardSection, DashboardTab } from "../../src/routing/paths";
 import { setCardsSourceOverride } from "../../src/dashboard/cards/source";
 import { createFixtureCardsSource, FIXTURE_CARD_IDS } from "../../src/dashboard/cards/fixtureSource";
+import { cardStatus } from "../../src/dashboard/cards/lifecycle";
+import { CARD_ATTENTION_KEYS } from "../../src/dashboard/overview/cardsSummary";
 import type { Mandate, PaymentReceipt } from "@chainpay/sdk";
 import { Router } from "../../src/routing/Router";
 import { ChainPayTheme } from "../../src/theme/ChainPayTheme";
@@ -391,7 +393,14 @@ const fixtureCards = createFixtureCardsSource({
   restore: (CARD_QUERY.get("restore") as never) ?? undefined,
   reads: (CARD_QUERY.get("reads") as never) ?? undefined,
 });
-setCardsSourceOverride(FAIL ? { ...fixtureCards, listCards: async () => { throw new Error("Fixture: cards unavailable"); } } : fixtureCards);
+// `?clear=1` keeps only cards that need nothing from the owner, so a checked Overview
+// can be clear; `?cards=fail` fails the card list alone (Overview must not call that clear).
+const CARDS_FAIL = FAIL || CARD_QUERY.get("cards") === "fail";
+setCardsSourceOverride(CARDS_FAIL
+  ? { ...fixtureCards, listCards: async () => { throw new Error("Fixture: cards unavailable"); } }
+  : CLEAR
+    ? { ...fixtureCards, listCards: async () => (await fixtureCards.listCards()).filter((card) => !(CARD_ATTENTION_KEYS as readonly string[]).includes(cardStatus(card).key)) }
+    : fixtureCards);
 const CARD_KEY = CARD_QUERY.get("card") as keyof typeof FIXTURE_CARD_IDS | null;
 type CardRoute = { cardsNew?: boolean; cardId?: string; cardSection?: CardSection };
 const noop = async () => {};
