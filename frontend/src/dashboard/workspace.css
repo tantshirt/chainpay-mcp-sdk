@@ -346,3 +346,33 @@
   .dashboard-app.cp-app .owner-request-body { padding-left: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .cp-request-next svg { transition: none; } }
+
+/* --------------------------------------------------------------------------
+   Payments
+   -------------------------------------------------------------------------- */
+.dashboard-app.cp-app .owner-payments-workspace { display: grid; gap: 24px; }
+.dashboard-app.cp-app .receipt-page { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
+.dashboard-app.cp-app .receipt-ledger-heading-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.dashboard-app.cp-app .onchain-receipts-card .receipt-ledger-table { width: 100%; font: var(--ws-text-table); }
+.dashboard-app.cp-app .onchain-receipts-card .receipt-ledger-table th { padding: 12px; font: var(--ws-text-label); color: var(--ws-ink-secondary); text-transform: none; }
+.dashboard-app.cp-app .onchain-receipts-card .receipt-ledger-table th:nth-child(1) { width: 44%; }
+.dashboard-app.cp-app .onchain-receipts-card .receipt-ledger-table th:nth-child(2) { width: 20%; }
+.dashboard-app.cp-app .onchain-receipts-card .receipt-ledger-table th:nth-child(3) { width: 18%; }
+.dashboard-app.cp-app .onchain-receipts-card .receipt-ledger-table th:nth-child(4) { width: 18%; }
+.dashboard-app.cp-app .cp-ledger-num { text-align: right; }
+.dashboard-app.cp-app .receipt-ledger-amount { font: 500 15px/22px Inter, sans-serif; color: var(--ws-ink); }
+.dashboard-app.cp-app .receipt-ledger-amount .cp-amount { justify-content: flex-end; }
+.dashboard-app.cp-app .receipt-ledger-main { display: grid; grid-template-columns: 32px minmax(0, 1fr); align-items: center; gap: 12px; padding: 12px 0; border: 0; background: none; text-align: left; cursor: pointer; color: var(--ws-ink); }
+.dashboard-app.cp-app .receipt-ledger-main strong { font: 500 14px/20px Inter, sans-serif; }
+.dashboard-app.cp-app .receipt-ledger-main:hover strong { color: var(--ws-primary-ink); }
+.dashboard-app.cp-app .receipt-ledger-status { display: grid; justify-items: start; gap: 4px; }
+.dashboard-app.cp-app .receipt-ledger-status small { font: 400 12px/16px Inter, sans-serif; color: var(--ws-ink-secondary); }
+.dashboard-app.cp-app .receipt-ledger-row.is-selected { background: #f7f9ff; }
+.dashboard-app.cp-app .onchain-receipts-card .cp-collection-notice { margin-top: 4px; }
+@media (max-width: 760px) {
+  .dashboard-app.cp-app .receipt-ledger-row { grid-template-columns: minmax(0, 1fr) auto; }
+  .dashboard-app.cp-app .receipt-ledger-table td.receipt-ledger-amount { grid-column: 1 / -1; text-align: left; padding: 0 0 0 56px; }
+  .dashboard-app.cp-app .receipt-ledger-amount .cp-amount { justify-content: flex-start; }
+  .dashboard-app.cp-app .receipt-ledger-heading-actions { flex-direction: row; justify-content: flex-start; }
+  .dashboard-app.cp-app .receipt-ledger-heading-actions > .cp-status { flex-basis: 100%; width: fit-content; max-width: fit-content; }
+}

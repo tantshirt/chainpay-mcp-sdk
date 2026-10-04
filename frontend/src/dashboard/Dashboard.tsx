@@ -290,8 +290,9 @@ export function Dashboard({
   const [dangerStatus, setDangerStatus] = useState("");
   const ownerSignIn = useOwnerSignIn();
   const [mandateCreateOpen, setMandateCreateOpen] = useState(Boolean(mandateBuilder));
-  // The Requests composer is opened from the page header's primary action.
+  // The Requests composer and the new-payment form open from the page header's primary action.
   const [requestComposerOpen, setRequestComposerOpen] = useState(false);
+  const [paymentComposerOpen, setPaymentComposerOpen] = useState(false);
   useEffect(() => {
     setMandateCreateOpen(Boolean(mandateBuilder));
   }, [mandateBuilder]);
@@ -1139,7 +1140,8 @@ export function Dashboard({
               // card. A second, identical-looking page-level button next to it
               // refreshed mandates instead, which read as a duplicate.
               : tab === "assistant" ? <Button label={requestComposerOpen ? "Close composer" : "New request"} variant={requestComposerOpen ? "secondary" : "primary"} icon={requestComposerOpen ? <X size={18} /> : <Plus size={18} />} onClick={() => setRequestComposerOpen((open) => !open)} />
-              : ["receipts", "payments", "settings", "agents", "connect-mcp"].includes(tab) ? null
+              : tab === "payments" ? <Button variant={paymentComposerOpen ? "secondary" : "primary"} label={paymentComposerOpen ? "Back to payments" : "New payment"} icon={paymentComposerOpen ? <ArrowLeft size={18} /> : <Plus size={18} />} onClick={() => setPaymentComposerOpen((open) => !open)} />
+              : ["receipts", "settings", "agents", "connect-mcp"].includes(tab) ? null
               : <Button type="button" variant="secondary" className="refresh-button" label="Refresh" icon={<RefreshCw size={16} />} isDisabled={integrationStatus === "loading"} onClick={() => void onRefresh()} />
             }
           />}
@@ -1154,7 +1156,7 @@ export function Dashboard({
           <PendingSettlements wallet={wallet} />
 
 
-          <div>{tab === "cards" ? <CardsArea wallet={wallet} walletSigner={walletSigner} walletMessageSigner={walletMessageSigner} onCallMcp={onCallMcp} mandates={mandates} cardsNew={cardsNew} cardId={cardId} cardSection={cardSection} notice={ownerSignIn.status !== "ready" ? <div className="cp-workspace-signin is-compact"><div><p>Sign in to load your cards. A login message is not a spending approval.</p></div>{ownerSignIn.error && <p role="alert">{ownerSignIn.error}</p>}</div> : undefined} onNavigate={(target) => { setMobileNav(false); onTabChange("cards", target); }} /> : tab === "assistant" ? <AssistantPanel composing={requestComposerOpen} onComposingChange={setRequestComposerOpen} prompt={prompt} setPrompt={setPrompt} reply={reply} thinking={thinking} listening={listening} agentToolsUsed={agentToolsUsed} inbox={agentInbox} approvalStatuses={approvalStatuses} approvalErrors={approvalErrors} attachments={agentAttachments} attachmentError={attachmentError} stablecoinOptions={stablecoinOptions} mandateDecimals={mandateDecimals} mandate={mandate} sessionReady={ownerSignIn.status === "ready"} onSignIn={() => void ownerSignIn.signIn()} onAsk={() => void askChainPay()} onVoice={startVoice} onLoadDemoInvoice={() => void loadDemoPaymentRequest()} onApprove={approveAgentRequest} onAddAttachments={addAgentAttachments} onRemoveAttachment={removeAgentAttachment} onArchive={archiveInboxItemById} onRestore={restoreInboxItemById} onCallMcp={onCallMcp} permissionRequests={{ focusId: focusedRequestId, retryingHash: retryingLinkHash, symbolFor: requestSymbol, onReview: reviewPermissionRequest, onDecline: declinePermissionRequestById, onRetryLink: (record) => void retryPermissionLink(record) }} /> : tab === "protocol" ? <ProtocolPanel wallet={wallet} walletSigner={walletSigner} config={protocolConfig} onCreated={onRefresh} /> : tab === "mandates" ? <MandatesPanel wallet={wallet} walletSigner={walletSigner} walletMessageSigner={walletMessageSigner} mandates={mandates} mandate={mandate} mandateDecimals={mandateDecimals} stablecoinOptions={stablecoinOptions} protocolConfig={protocolConfig} loadStatus={mandateLoadStatus} createOpen={mandateCreateOpen} onCreateOpenChange={(open) => { if (open) openMandateCreate(); else closeMandateBuilder(); }} onMandateAction={runMandateAction} onSelectMandate={onSelectMandate} onOpenPayments={() => selectTab("payments")} onOpenAgents={() => selectTab("agents")} onRefresh={onRefresh} onPermissionRequestCreated={permissionRequestCreated} /> : tab === "payments" ? <PaymentsWorkspace wallet={wallet} history={<ReceiptPanel mandates={mandates} stablecoinOptions={stablecoinOptions} preparedReceiptAddresses={preparedReceiptAddresses} onCallMcp={onCallMcp} />} form={<PaymentPanel wallet={wallet} walletSigner={walletSigner} mandates={mandates} mandate={mandate} stablecoinOptions={stablecoinOptions} onSelectMandate={onSelectMandate} onCallMcp={onCallMcp} onAskAgent={(message) => { selectTab("assistant"); void askChainPay(message); }} onRefresh={onRefresh} onOpenMandateBuilder={openMandateCreate} onOpenAgents={() => selectTab("agents")} />} /> : agentsTabActive ? <AgentsTabPanel connectionState={connectionState} onSignIn={() => void ownerSignIn.signIn()} onRetry={() => setConnectionsVersion((value) => value + 1)} serverUrl={MCP_URL} wallet={wallet} mandates={mandates} stablecoinOptions={stablecoinOptions} connections={connections} hostedAssistantStatus={hostedAssistantStatus} connectDialogInitiallyOpen={tab === "connect-mcp"} onConnected={(connection) => setConnections((current) => [connection, ...current])} onRevoked={async (id) => { await revokeMcpConnection(wallet, id); setConnections((current) => current.filter((connection) => connection.id !== id)); }} onCreateMandate={openMandateCreate} onOpenAssistant={() => selectTab("assistant")} /> : tab === "receipts" ? <ReceiptPanel mandates={mandates} stablecoinOptions={stablecoinOptions} preparedReceiptAddresses={preparedReceiptAddresses} receiptDetail={receiptDetail} onCallMcp={onCallMcp} /> : tab === "tools" ? <ToolsPanel mcpTools={mcpTools} /> : tab === "settings" ? <SettingsPanel advancedOpen={advancedSettingsOpen} onAdvancedOpenChange={setAdvancedSettingsOpen} onAdvanced={(destination) => selectTab(destination)} wallet={wallet} walletName={walletName} walletIcon={walletIcon} walletCapabilities={walletCapabilities} stablecoinOptions={stablecoinOptions} activeMandateCount={revocableMandateCount} dangerStatus={dangerStatus} onRevokeAll={() => void revokeAllMandates()} onDisconnect={onDisconnect} onChangeWallet={onChangeWallet} /> : (
+          <div>{tab === "cards" ? <CardsArea wallet={wallet} walletSigner={walletSigner} walletMessageSigner={walletMessageSigner} onCallMcp={onCallMcp} mandates={mandates} cardsNew={cardsNew} cardId={cardId} cardSection={cardSection} notice={ownerSignIn.status !== "ready" ? <div className="cp-workspace-signin is-compact"><div><p>Sign in to load your cards. A login message is not a spending approval.</p></div>{ownerSignIn.error && <p role="alert">{ownerSignIn.error}</p>}</div> : undefined} onNavigate={(target) => { setMobileNav(false); onTabChange("cards", target); }} /> : tab === "assistant" ? <AssistantPanel composing={requestComposerOpen} onComposingChange={setRequestComposerOpen} prompt={prompt} setPrompt={setPrompt} reply={reply} thinking={thinking} listening={listening} agentToolsUsed={agentToolsUsed} inbox={agentInbox} approvalStatuses={approvalStatuses} approvalErrors={approvalErrors} attachments={agentAttachments} attachmentError={attachmentError} stablecoinOptions={stablecoinOptions} mandateDecimals={mandateDecimals} mandate={mandate} sessionReady={ownerSignIn.status === "ready"} onSignIn={() => void ownerSignIn.signIn()} onAsk={() => void askChainPay()} onVoice={startVoice} onLoadDemoInvoice={() => void loadDemoPaymentRequest()} onApprove={approveAgentRequest} onAddAttachments={addAgentAttachments} onRemoveAttachment={removeAgentAttachment} onArchive={archiveInboxItemById} onRestore={restoreInboxItemById} onCallMcp={onCallMcp} permissionRequests={{ focusId: focusedRequestId, retryingHash: retryingLinkHash, symbolFor: requestSymbol, onReview: reviewPermissionRequest, onDecline: declinePermissionRequestById, onRetryLink: (record) => void retryPermissionLink(record) }} /> : tab === "protocol" ? <ProtocolPanel wallet={wallet} walletSigner={walletSigner} config={protocolConfig} onCreated={onRefresh} /> : tab === "mandates" ? <MandatesPanel wallet={wallet} walletSigner={walletSigner} walletMessageSigner={walletMessageSigner} mandates={mandates} mandate={mandate} mandateDecimals={mandateDecimals} stablecoinOptions={stablecoinOptions} protocolConfig={protocolConfig} loadStatus={mandateLoadStatus} createOpen={mandateCreateOpen} onCreateOpenChange={(open) => { if (open) openMandateCreate(); else closeMandateBuilder(); }} onMandateAction={runMandateAction} onSelectMandate={onSelectMandate} onOpenPayments={() => selectTab("payments")} onOpenAgents={() => selectTab("agents")} onRefresh={onRefresh} onPermissionRequestCreated={permissionRequestCreated} /> : tab === "payments" ? <PaymentsWorkspace composing={paymentComposerOpen} history={<ReceiptPanel mandates={mandates} stablecoinOptions={stablecoinOptions} preparedReceiptAddresses={preparedReceiptAddresses} onCallMcp={onCallMcp} />} form={<PaymentPanel wallet={wallet} walletSigner={walletSigner} mandates={mandates} mandate={mandate} stablecoinOptions={stablecoinOptions} onSelectMandate={onSelectMandate} onCallMcp={onCallMcp} onAskAgent={(message) => { selectTab("assistant"); void askChainPay(message); }} onRefresh={onRefresh} onOpenMandateBuilder={openMandateCreate} onOpenAgents={() => selectTab("agents")} />} /> : agentsTabActive ? <AgentsTabPanel connectionState={connectionState} onSignIn={() => void ownerSignIn.signIn()} onRetry={() => setConnectionsVersion((value) => value + 1)} serverUrl={MCP_URL} wallet={wallet} mandates={mandates} stablecoinOptions={stablecoinOptions} connections={connections} hostedAssistantStatus={hostedAssistantStatus} connectDialogInitiallyOpen={tab === "connect-mcp"} onConnected={(connection) => setConnections((current) => [connection, ...current])} onRevoked={async (id) => { await revokeMcpConnection(wallet, id); setConnections((current) => current.filter((connection) => connection.id !== id)); }} onCreateMandate={openMandateCreate} onOpenAssistant={() => selectTab("assistant")} /> : tab === "receipts" ? <ReceiptPanel mandates={mandates} stablecoinOptions={stablecoinOptions} preparedReceiptAddresses={preparedReceiptAddresses} receiptDetail={receiptDetail} onCallMcp={onCallMcp} /> : tab === "tools" ? <ToolsPanel mcpTools={mcpTools} /> : tab === "settings" ? <SettingsPanel advancedOpen={advancedSettingsOpen} onAdvancedOpenChange={setAdvancedSettingsOpen} onAdvanced={(destination) => selectTab(destination)} wallet={wallet} walletName={walletName} walletIcon={walletIcon} walletCapabilities={walletCapabilities} stablecoinOptions={stablecoinOptions} activeMandateCount={revocableMandateCount} dangerStatus={dangerStatus} onRevokeAll={() => void revokeAllMandates()} onDisconnect={onDisconnect} onChangeWallet={onChangeWallet} /> : (
             <>
               {integrationStatus === "loading" ? (
                 <section className="dashboard-card"><span className="section-kicker">LOADING PERMISSIONS</span><h2>Reading on-chain mandates…</h2><p className="t-body">ChainPay is discovering spending permissions for this wallet. First-run setup appears only after a successful read returns zero mandates.</p></section>
@@ -1189,10 +1191,11 @@ export function Dashboard({
   );
 }
 
-function PaymentsWorkspace({ history, form }: { wallet: string; history: ReactNode; form: ReactNode }) {
-  const [composing, setComposing] = useState(false);
-  const [started, setStarted] = useState(false);
-  return <section className="owner-payments-workspace"><div className="owner-page-actions"><Button variant={composing ? "secondary" : "primary"} label={composing ? "Back to payments" : "New payment"} icon={composing ? <ArrowLeft size={18} /> : <Plus size={18} />} onClick={() => { setStarted(true); setComposing(!composing); }} /></div><div hidden={composing}>{history}</div>{started && <div hidden={!composing}>{form}</div>}</section>;
+function PaymentsWorkspace({ composing, history, form }: { composing: boolean; history: ReactNode; form: ReactNode }) {
+  // The form mounts on first open and then stays mounted (hidden), so a draft survives "Back to payments".
+  const [started, setStarted] = useState(composing);
+  useEffect(() => { if (composing) setStarted(true); }, [composing]);
+  return <section className="owner-payments-workspace"><div hidden={composing}>{history}</div>{started && <div hidden={!composing}>{form}</div>}</section>;
 }
 
 type MandateTableStatus = Mandate["status"];
@@ -2524,6 +2527,8 @@ type LedgerReceiptRow = {
   amountLabel: string;
   tokenLabel: string;
   mint: string;
+  /** Exact base units, for display through the shared metadata store. */
+  baseUnits: string;
 };
 
 function ReceiptPanel({ mandates, stablecoinOptions, preparedReceiptAddresses, receiptDetail, onCallMcp }: { mandates: Mandate[]; stablecoinOptions: StablecoinOption[]; preparedReceiptAddresses?: Set<string>; receiptDetail?: string; onCallMcp: (name: string, args: Record<string, unknown>) => Promise<McpToolResponse> }) {
@@ -2550,9 +2555,15 @@ function ReceiptPanel({ mandates, stablecoinOptions, preparedReceiptAddresses, r
   const stablecoinKey = stablecoinOptions.map((item) => `${item.mint}:${item.label}`).join("|");
   const detailReceiptAddress = receiptDetail?.trim() ?? "";
   const selectedReceipt = detailReceiptAddress
-    ? onChainReceipts.find((item) => item.address === detailReceiptAddress) ?? { address: detailReceiptAddress, invoiceHash: "", recipientTokenAccount: "", executedAtSlot: "", settled: false, amountLabel: "Receipt", tokenLabel: "…", mint: "" }
+    ? onChainReceipts.find((item) => item.address === detailReceiptAddress) ?? { address: detailReceiptAddress, invoiceHash: "", recipientTokenAccount: "", executedAtSlot: "", settled: false, amountLabel: "Receipt", tokenLabel: "…", mint: "", baseUnits: "0" }
     : onChainReceipts.find((item) => item.address === selectedReceiptAddress) ?? null;
   const settledCount = onChainReceipts.filter((item) => item.settled).length;
+  // The settled count is shown only when every permission's history loaded.
+  const historyComplete = receiptLoadStatus === "ready" && !receiptLoadError;
+  const historyState = receiptLoadStatus === "loading" ? "loading" as const
+    : receiptLoadStatus === "error" && onChainReceipts.length === 0 ? "failed" as const
+    : receiptLoadError ? "partial" as const
+    : onChainReceipts.length === 0 ? "empty" as const : "loaded" as const;
 
   useEffect(() => {
     if (detailReceiptAddress) setSelectedReceiptAddress(detailReceiptAddress);
@@ -2605,6 +2616,7 @@ function ReceiptPanel({ mandates, stablecoinOptions, preparedReceiptAddresses, r
           executedAtSlot: receipt.executedAtSlot.toString(),
           settled: Boolean(view),
           amountLabel: amountLabel(amount),
+          baseUnits: receipt.amount.toString(),
           tokenLabel: stablecoinOptions.find((option) => option.mint === receipt.mint)?.label ?? tokenLabelForMint(receipt.mint),
         };
       });
@@ -2699,19 +2711,33 @@ function ReceiptPanel({ mandates, stablecoinOptions, preparedReceiptAddresses, r
   return <section className="receipt-page">
     {detailReceiptAddress && (
       <div className="mandate-create-toolbar">
-        <div><span className="section-kicker">RECEIPT DETAIL</span><h2>{selectedReceipt?.amountLabel ?? "Receipt"} {selectedReceipt?.tokenLabel ?? ""}</h2></div>
+        <div><span className="section-kicker">RECEIPT DETAIL</span><h2>{selectedReceipt?.mint ? <Amount baseUnits={selectedReceipt.baseUnits} mint={selectedReceipt.mint} symbol={selectedReceipt.tokenLabel} /> : "Receipt"}</h2></div>
         <Button type="button" variant="secondary" label="Back to payments" isDisabled={false} onClick={() => navigate({ kind: "app", tab: "receipts" }, { replace: true })} />
       </div>
     )}
-    <div className="dashboard-card onchain-receipts-card" hidden={Boolean(detailReceiptAddress)}>
-      <div className="dashboard-card-heading"><div><span className="section-kicker">ON-CHAIN RECEIPTS</span><h2>Payment history</h2></div><div className="receipt-ledger-heading-actions"><span className="chip chip-muted">{settledCount} settled</span><Button type="button" variant="secondary" className="receipt-export-button" label={exportStatus === "exporting" ? "Exporting…" : "Export CSV"} icon={<Download size={16} />} isDisabled={receiptLoadStatus === "loading" || exportStatus === "exporting" || ledgerSource.receipts.length === 0} onClick={() => void exportReceiptsCsv()} /><Button type="button" variant="secondary" className="refresh-button" label="Refresh" icon={<RefreshCw size={16} />} isDisabled={receiptLoadStatus === "loading"} onClick={() => setReceiptLoadVersion((value) => value + 1)} /></div></div>
-      <p className="builder-intro">Select a payment to view or share its receipt.</p>
-      {receiptLoadStatus === "loading" ? <div className="receipt-ledger-empty" aria-busy="true"><Skeleton width="100%" height={72} /><p>Reading Devnet receipts…</p></div> : receiptLoadStatus === "error" && onChainReceipts.length === 0 ? <div className="receipt-ledger-empty"><CircleAlert size={28} /><h3>Payment history is unavailable</h3><p>Refresh to try again. Your recorded payments are unchanged.</p></div> : onChainReceipts.length === 0 ? <div className="receipt-ledger-empty"><p>No receipts yet — one is written on chain for every settled payment.</p><SampleReceiptOutline /></div> : <Table className="receipt-ledger-table" density="compact" dividers="rows" hasHover>
+    <section className="cp-surface onchain-receipts-card" hidden={Boolean(detailReceiptAddress)} aria-labelledby="payment-history-title">
+      <SectionHeader id="payment-history-title" title="Payment history" description="Every settled payment has an on-chain receipt. Select one to view or share it." action={<div className="receipt-ledger-heading-actions">{historyComplete && onChainReceipts.length > 0 && <Status {...statusFor("settled", `${settledCount} settled`)} />}<Button type="button" variant="secondary" className="receipt-export-button" label={exportStatus === "exporting" ? "Exporting…" : "Export CSV"} icon={<Download size={16} />} isDisabled={receiptLoadStatus === "loading" || exportStatus === "exporting" || ledgerSource.receipts.length === 0} onClick={() => void exportReceiptsCsv()} />{historyState !== "failed" && <Button type="button" variant="secondary" className="refresh-button" label="Refresh" icon={<RefreshCw size={16} />} isDisabled={receiptLoadStatus === "loading"} onClick={() => setReceiptLoadVersion((value) => value + 1)} />}</div>} />
+      {(() => {
+        // Every failure collapses into one recovery state: history, export or both.
+        const problems = [historyState === "partial" ? receiptLoadError : "", exportStatus === "error" ? exportMessage : ""].filter(Boolean);
+        return problems.length > 0 && historyState !== "failed" ? <div className="cp-collection-notice" role="status" data-state="partial"><CircleAlert size={16} aria-hidden="true" /><div><strong>{historyState === "partial" ? "Some payment history couldn’t be loaded" : "The CSV couldn’t be created"}</strong><p>{problems.join(" ")} Your recorded payments are unchanged.</p></div><Button type="button" variant="secondary" label="Try again" onClick={() => { if (exportStatus === "error") void exportReceiptsCsv(); if (historyState === "partial") setReceiptLoadVersion((value) => value + 1); }} /></div> : null;
+      })()}
+      <CollectionState
+        state={historyState === "partial" ? "loaded" : historyState}
+        noun="payments"
+        title={historyState === "failed" ? "Payment history is unavailable" : historyState === "empty" ? "No payments yet" : undefined}
+        description={historyState === "failed" ? (receiptLoadError || "Receipts couldn’t be read from Solana.") + " Your recorded payments are unchanged." : "A receipt is written on chain for every settled payment and will appear here."}
+        icon={historyState === "empty" ? ReceiptText : undefined}
+        onRetry={() => setReceiptLoadVersion((value) => value + 1)}
+        retryLabel="Refresh"
+      >
+        <Table className="receipt-ledger-table" density="compact" dividers="rows" hasHover>
         <TableHeader>
           <TableRow isHeaderRow>
-            <TableHeaderCell scope="col">Amount</TableHeaderCell>
+            <TableHeaderCell scope="col">Payment</TableHeaderCell>
+            <TableHeaderCell scope="col" className="cp-ledger-num">Amount</TableHeaderCell>
             <TableHeaderCell scope="col">Status</TableHeaderCell>
-            <TableHeaderCell scope="col">Actions</TableHeaderCell>
+            <TableHeaderCell scope="col"><span className="sr-only">Receipt</span></TableHeaderCell>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -2720,12 +2746,13 @@ function ReceiptPanel({ mandates, stablecoinOptions, preparedReceiptAddresses, r
             return (
               <TableRow className={`receipt-ledger-row ${selected ? "is-selected" : ""}`} key={receipt.address}>
                 <TableCell>
-                  <button type="button" className="receipt-ledger-main" onClick={() => setSelectedReceiptAddress(receipt.address)} aria-label={`Preview ${receipt.tokenLabel} receipt ${receipt.address}`}>
+                  <button type="button" className="receipt-ledger-main" onClick={() => setSelectedReceiptAddress(receipt.address)} aria-label={`Preview ${receipt.tokenLabel} receipt ${receipt.address}`} aria-pressed={selected}>
                     <TokenIcon mint={receipt.mint} />
-                    <span className="receipt-ledger-payment"><strong>{receipt.amountLabel} {receipt.tokenLabel}</strong><small>Invoice {shortAddress(receipt.invoiceHash)} · to {shortAddress(receipt.recipientTokenAccount)}</small></span>
+                    <span className="receipt-ledger-payment"><strong>{receipt.tokenLabel} payment</strong><small>Invoice {shortAddress(receipt.invoiceHash)} · to {shortAddress(receipt.recipientTokenAccount)}</small></span>
                   </button>
                 </TableCell>
-                <TableCell><span className="receipt-ledger-status"><strong>{receipt.settled ? "Settled" : "Unsettled"}</strong><small>Slot {receipt.executedAtSlot}</small></span></TableCell>
+                <TableCell className="cp-ledger-num receipt-ledger-amount"><Amount baseUnits={receipt.baseUnits} mint={receipt.mint} symbol={receipt.tokenLabel} /></TableCell>
+                <TableCell><span className="receipt-ledger-status">{receipt.settled ? <Status {...statusFor("settled", "Settled")} /> : <Status {...statusFor("pending", "Not settled")} />}<small>Slot {receipt.executedAtSlot}</small></span></TableCell>
                 <TableCell>
                   <div className="receipt-ledger-actions">
                     <Button type="button" variant="ghost" href={buildPath({ kind: "app", tab: "receipts", receiptDetail: receipt.address })} label="Open receipt" icon={<ArrowUpRight size={18} />} />
@@ -2736,10 +2763,10 @@ function ReceiptPanel({ mandates, stablecoinOptions, preparedReceiptAddresses, r
             );
           })}
         </TableBody>
-      </Table>}
-      {receiptLoadError && <small className={receiptLoadStatus === "error" ? "receipt-ledger-error" : "receipt-ledger-warning"}>{receiptLoadError}</small>}
-      {exportMessage && <small className={exportStatus === "error" ? "receipt-ledger-error" : "receipt-ledger-warning"} role="status">{exportMessage}</small>}
-    </div>
+      </Table>
+      </CollectionState>
+      {exportMessage && exportStatus !== "error" && <small className="receipt-ledger-warning" role="status">{exportMessage}</small>}
+    </section>
     {selectedReceipt && <div className="dashboard-card receipt-preview-card"><div className="dashboard-card-heading"><div><span className="section-kicker">{detailReceiptAddress ? "RECEIPT DETAIL" : "RECEIPT PREVIEW"}</span><h2 className="owner-token-heading"><TokenIcon mint={selectedReceipt.mint} />Payment receipt</h2></div>{!detailReceiptAddress && <Button type="button" variant="ghost" href={buildPath({ kind: "app", tab: "receipts", receiptDetail: selectedReceipt.address })} label="Open full page" isDisabled={false} />}</div><LoadedReceiptCard receiptPda={selectedReceipt.address} shareMode="dashboard" preparedInRequests={preparedReceiptAddresses?.has(selectedReceipt.address) ?? false} onShare={() => void sendReceipt(selectedReceipt)} /></div>}
     {shareMessage && <div className="receipt-share-message" role="status">{shareMessage}</div>}
     <details className="dashboard-card receipt-lookup"><summary className="owner-lookup-summary"><span className="owner-row-icon neutral"><Search /></span><span><strong>Find a receipt</strong><small>Advanced lookup by receipt address or payment reference</small></span><ChevronDown size={18} /></summary><div className="owner-lookup-intro"><h2>Verify a payment</h2><p>Find a receipt directly from the chain, even if it isn’t in your payment history.</p></div>
