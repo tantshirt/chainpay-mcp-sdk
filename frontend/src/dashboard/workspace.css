@@ -45,10 +45,10 @@
 .side-link .sidebar-glyph { width: 18px; color: currentColor; text-align: center; }
 .side-link.muted { margin-top: auto; }
 .sidebar-bottom { margin-top: 22px; padding: 17px 12px 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; }
-.dashboard-topbar { min-height: 72px; position: relative; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 0 42px; border-bottom: 1px solid var(--line); background: #fff; }
+.dashboard-topbar { min-height: 72px; position: relative; z-index: var(--ws-z-topbar, 20); display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 0 42px; border-bottom: 1px solid var(--line); background: #fff; }
 .dashboard-top-actions { display: flex; align-items: center; gap: 12px; }
 .wallet-menu { position: relative; }
-.wallet-asset-popover { width: min(430px, calc(100vw - 32px)); position: absolute; top: calc(100% + 11px); right: 0; z-index: 40; padding: 20px; border: 1px solid var(--line); border-radius: var(--radius-card); background: #fff; box-shadow: 0 16px 40px rgba(10, 11, 13, .12); }
+.wallet-asset-popover { width: min(430px, calc(100vw - 32px)); position: absolute; top: calc(100% + 11px); right: 0; z-index: var(--ws-z-popover, 40); padding: 20px; border: 1px solid var(--line); border-radius: var(--radius-card); background: #fff; box-shadow: 0 16px 40px rgba(10, 11, 13, .12); }
 .wallet-asset-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .wallet-asset-heading { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .wallet-brand-mark { display: block; object-fit: contain; border-radius: 6px; flex: none; }
@@ -458,7 +458,7 @@
   .dashboard-page { width: min(100% - 48px, 920px); } }
 @media (max-width: 760px) {
   .dashboard-page { width: calc(100% - 32px); padding-top: 30px; }
-  .dashboard-sidebar { position: sticky; top: 0; z-index: 5; display: flex; flex-direction: row; align-items: center; gap: 4px; overflow-x: auto; padding: 10px 16px; background: #fff; }
+  .dashboard-sidebar { position: sticky; top: 0; z-index: var(--ws-z-sticky, 5); display: flex; flex-direction: row; align-items: center; gap: 4px; overflow-x: auto; padding: 10px 16px; background: #fff; }
   .dashboard-sidebar .side-link { flex: 0 0 auto; white-space: nowrap; }
   .dashboard-sidebar .side-link.muted { display: none; }
   .protocol-layout { grid-template-columns: 1fr; }
@@ -750,7 +750,7 @@
    had no stacking context of its own, so the header's box sat above the
    sidebar's top edge and swallowed clicks there — including the collapse
    toggle beside the brand. */
-.cp-app .dashboard-sidebar { position: sticky; z-index: 30; }
+.cp-app .dashboard-sidebar { position: sticky; z-index: var(--ws-z-sidebar, 30); }
 
 /* Owner workspace tokens. The public landing retains its own composition. */
 .dashboard-app.cp-app {
@@ -1002,7 +1002,7 @@ body:has(.dashboard-app) .cp-record-panel :is(.mono,.t-num,.mandate-detail-value
 .owner-token-icon img { width: 100%; height: 100%; object-fit: contain; }
 .owner-token-heading { display: flex; align-items: center; gap: 12px; }
 .dashboard-app.cp-app .dashboard-sidebar { overflow: visible; }
-.dashboard-app.cp-app .sidebar-collapse-toggle { position: absolute; top: 50%; right: -17px; transform: translateY(-50%); z-index: 30; width: 34px; min-height: 44px; padding: 8px; background: white; border: 1px solid #dce3ed; border-radius: 10px; box-shadow: 0 2px 6px #17243a08; }
+.dashboard-app.cp-app .sidebar-collapse-toggle { position: absolute; top: 50%; right: -17px; transform: translateY(-50%); z-index: var(--ws-z-handle, 1); width: 34px; min-height: 44px; padding: 8px; background: white; border: 1px solid #dce3ed; border-radius: 10px; box-shadow: 0 2px 6px #17243a08; }
 .dashboard-app.cp-app .sidebar-collapse-toggle:hover { color: #0052ff; background: #f4f7fc; }
 /* The Astryx popover owns positioning; its content must stay in normal flow. */
 body:has(.dashboard-app) .wallet-asset-popover { position: static; width: 100%; border: 0; box-shadow: none; margin: 0; }
@@ -1128,6 +1128,16 @@ body:has(.dashboard-app) .wallet-asset-popover { position: static; width: 100%; 
   --ws-ease: cubic-bezier(.22, 1, .36, 1);
   --ws-duration-press: 120ms;
   --ws-duration-panel: 200ms;
+
+  /* Layers. Page-level: the topbar sits above content, the sidebar above the
+     topbar's edge (so the header box never swallows its clicks). The popover
+     and the collapse handle live inside the topbar's and the sidebar's own
+     stacking contexts, so their values only order them within those. */
+  --ws-z-sticky: 5;
+  --ws-z-topbar: 20;
+  --ws-z-sidebar: 30;
+  --ws-z-popover: 40;
+  --ws-z-handle: 1;
 }
 
 /* --------------------------------------------------------------------------
