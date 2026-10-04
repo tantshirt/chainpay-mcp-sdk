@@ -42,6 +42,7 @@ import { Tab, TabList } from "@astryxdesign/core/TabList";
 import { TextInput } from "@astryxdesign/core/TextInput";
 import { useToast } from "@astryxdesign/core/Toast";
 import { ConfirmDialog } from "../ui/ConfirmDialog";
+import { MintMetadataProvider, useCreateMintMetadataStore, useMintMetadata, useMintMetadataMany, useMintMetadataStore } from "../ui/amount/useMintMetadata";
 import { Arrow, Shield, shortAddress } from "../ui/marks";
 import { DashboardMobileNav, DashboardNav } from "./DashboardNav";
 import { PageHeader } from "./PageHeader";
@@ -275,7 +276,6 @@ export function Dashboard({
   const [assistantHistory, setAssistantHistory] = useState<AgentHistoryItem[]>([]);
   const [agentToolsUsed, setAgentToolsUsed] = useState<string[]>([]);
   const voiceRecognition = useRef<SpeechRecognitionLike | null>(null);
-  const [mandateDecimals, setMandateDecimals] = useState<number | null>(null);
   const [connections, setConnections] = useState<AgentConnection[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [dangerStatus, setDangerStatus] = useState("");
@@ -318,7 +318,9 @@ export function Dashboard({
   const walletCopyTimer = useRef<number | null>(null);
   const toast = useToast();
 
-  const spent = mandate ? formatTokenAmount(mandate.amountSpent, mandateDecimals) : "—";
+  // One mint metadata store per owner wallet, shared by every tab.
+  const mintMetadataStore = useCreateMintMetadataStore(wallet);
+  const { decimals: mandateDecimals } = useMintMetadata(mandate?.allowedMint, mintMetadataStore);
   const solWalletAsset = walletAssets.find((asset) => asset.symbol === "SOL");
   const tokenWalletAssets = walletAssets.filter((asset) => asset.symbol !== "SOL");
   const walletAssetRegistryKey = stablecoinOptions
@@ -482,18 +484,6 @@ export function Dashboard({
       walletCopyTimer.current = null;
     }, 1800);
   }
-
-  useEffect(() => {
-    let active = true;
-    setMandateDecimals(null);
-    if (!mandate) return () => { active = false; };
-    void chainpayClient.getMintDecimals(mandate.allowedMint).then((decimals) => {
-      if (active) setMandateDecimals(decimals);
-    }).catch(() => {
-      if (active) setMandateDecimals(null);
-    });
-    return () => { active = false; };
-  }, [mandate?.allowedMint]);
 
   useEffect(() => {
     let active = true;
@@ -1057,6 +1047,7 @@ export function Dashboard({
   };
 
   return (
+    <MintMetadataProvider store={mintMetadataStore}>
     <div className="dashboard-app cp-app">
       <DashboardMobileNav isOpen={mobileNav} onOpenChange={setMobileNav} {...dashboardNav} />
       <div className={`dashboard-layout${sidebarCollapsed ? " is-rail" : ""}`}>
@@ -1177,6 +1168,7 @@ export function Dashboard({
         </main>
       </div>
     </div>
+    </MintMetadataProvider>
   );
 }
 
@@ -1246,7 +1238,9 @@ export function MandatesPanel({
   const actionLock = useRef(false);
   const [currentSlot, setCurrentSlot] = useState<bigint | null>(null);
   const { estimate: slotEstimate } = useSlotEstimate();
-  const [decimalsByMint, setDecimalsByMint] = useState<Record<string, number>>({});
+  const mandateMints = useMintMetadataMany(mandates.map((value) => value.allowedMint));
+  const decimalsByMint: Record<string, number> = {};
+  for (const [mint, state] of Object.entries(mandateMints.states)) if (state.status === "verified") decimalsByMint[mint] = state.decimals;
   const [sourceDelegate, setSourceDelegate] = useState<string | null>(null);
   const [sourceDelegatedAmount, setSourceDelegatedAmount] = useState<bigint>(0n);
   const [delegateLoading, setDelegateLoading] = useState(false);
@@ -1339,21 +1333,6 @@ export function MandatesPanel({
     });
     return () => { active = false; };
   }, [mandate?.address, createOpen]);
-
-  useEffect(() => {
-    let active = true;
-    void Promise.all(mandates.map(async (value) => {
-      try {
-        return [value.allowedMint, await chainpayClient.getMintDecimals(value.allowedMint)] as const;
-      } catch {
-        return null;
-      }
-    })).then((entries) => {
-      if (!active) return;
-      setDecimalsByMint(Object.fromEntries(entries.filter((entry): entry is readonly [string, number] => entry !== null)));
-    });
-    return () => { active = false; };
-  }, [mandates.map((value) => value.allowedMint).join(",")]);
 
   useEffect(() => {
     if (!expandedMandate) {
@@ -2532,6 +2511,7 @@ type LedgerReceiptRow = {
 
 function ReceiptPanel({ mandates, stablecoinOptions, preparedReceiptAddresses, receiptDetail, onCallMcp }: { mandates: Mandate[]; stablecoinOptions: StablecoinOption[]; preparedReceiptAddresses?: Set<string>; receiptDetail?: string; onCallMcp: (name: string, args: Record<string, unknown>) => Promise<McpToolResponse> }) {
   const { navigate } = useRoute();
+  const mintMetadata = useMintMetadataStore();
   const [lookupMode, setLookupMode] = useState<"receipt" | "mandate">("receipt");
   const [receiptAddress, setReceiptAddress] = useState("");
   const [lookupMandate, setLookupMandate] = useState("");
@@ -2590,12 +2570,12 @@ function ReceiptPanel({ mandates, stablecoinOptions, preparedReceiptAddresses, r
           : left.executedAtSlot > right.executedAtSlot ? -1 : 1
       ));
       const mints = [...new Set(receipts.map((receipt) => receipt.mint))];
-      const decimalStates = await Promise.allSettled(
-        mints.map(async (mint) => [mint, await chainpayClient.getMintDecimals(mint)] as const),
-      );
+      // Shared, deduped metadata reads (the answer the rows display). retry() reuses a
+      // verified mint and reads an unavailable one again, so Refresh can recover.
+      const decimalStates = await Promise.all(mints.map(async (mint) => [mint, await mintMetadata.retry(mint)] as const));
       const decimalsByMint = new Map<string, number>();
-      for (const state of decimalStates) {
-        if (state.status === "fulfilled") decimalsByMint.set(state.value[0], state.value[1]);
+      for (const [mint, state] of decimalStates) {
+        if (state.status === "verified") decimalsByMint.set(mint, state.decimals);
       }
       const details = receipts.map((receipt) => {
         const view = receiptViewFromSettledPayment(receipt, decimalsByMint.get(receipt.mint) ?? null);
