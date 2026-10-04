@@ -147,6 +147,29 @@ test("slot estimates are labeled estimated and never treat 216000 slots as a day
   assert.equal(slots.sampleFromRpcResult([]), null);
 });
 
+test("ledger expiry shows a human date without the slot, past tense once expired", async () => {
+  const slots = await loadModule("owner/slotEstimate.ts");
+  const estimate = { secondsPerSlot: 0.4, slotsPerDay: 216000, estimated: true };
+  // Active: an estimated date, no protocol slot (that lives in details).
+  const active = slots.ledgerExpiryLabel(484_791_192n, 484_000_000n, estimate);
+  assert.match(active, /^Estimated \w{3} \d{1,2}, \d{4}$/);
+  assert.doesNotMatch(active, /slot/i);
+  // Expired: past tense with the estimated date it passed.
+  const expired = slots.ledgerExpiryLabel(484_000_000n, 484_216_000n, estimate);
+  assert.match(expired, /^Expired \w{3} \d{1,2}, \d{4}$/);
+  const day = 86_400_000;
+  assert.ok(Math.abs(new Date(expired.slice("Expired ".length)).getTime() - (Date.now() - day)) < 2 * day, "about a day ago");
+  // Status says expired but the slot can't be compared: no invented date.
+  assert.equal(slots.ledgerExpiryLabel(500n, null, null, { expired: true }), "Expired");
+  // No slot or no timing: say the date wasn't estimated, never show the raw slot.
+  assert.equal(slots.ledgerExpiryLabel(1000n, null, null), "Date not estimated");
+  assert.equal(slots.ledgerExpiryLabel(1000n, 100n, null), "Date not estimated");
+  assert.doesNotThrow(() => slots.ledgerExpiryLabel(10n ** 30n, 1n, estimate));
+  assert.equal(slots.ledgerExpiryLabel(10n ** 30n, 1n, estimate), "Date not estimated");
+  assert.doesNotThrow(() => slots.ledgerExpiryLabel(1n, 10n ** 30n, estimate));
+  assert.equal(slots.ledgerExpiryLabel(1n, 10n ** 30n, estimate), "Expired");
+});
+
 test("Dashboard empty overview and settings no longer invent this wallet's payments or fake prefs", async () => {
   const dashboard = await readFile(join(srcRoot, "dashboard/Dashboard.tsx"), "utf8");
   const emptyOverview = await readFile(join(srcRoot, "owner/EmptyOwnerOverview.tsx"), "utf8");

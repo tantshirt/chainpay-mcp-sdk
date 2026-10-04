@@ -75,7 +75,7 @@ import { loadWalletDrafts, saveWalletDrafts, type BatchCsvPayment } from "../wal
 import { chunkPreparedTransactions } from "../wallet/transactionChunks";
 import { createRecipientTokenAccount, type RecipientAtaReview } from "../wallet/recipientAta";
 import { assertCanPayTokenAccountRent, tokenProgramForMint } from "../wallet/tokenAccount";
-import { estimatedSlotsForDays, mandateExpiryLabel, parseExpirySlot } from "../owner/slotEstimate";
+import { estimatedSlotsForDays, ledgerExpiryLabel, mandateExpiryLabel, parseExpirySlot } from "../owner/slotEstimate";
 import { retryRead } from "../owner/retryRead";
 import { useOwnerSignIn } from "../owner/useOwnerSignIn";
 import { useSlotEstimate } from "../owner/useSlotEstimate";
@@ -1340,7 +1340,7 @@ export function MandatesPanel({
   const expandedMandateAsset = expandedMandate ? stablecoinOptions.find((option) => option.mint === expandedMandate.allowedMint) : null;
   const expandedMandateDecimals = expandedMandate ? decimalsByMint[expandedMandate.allowedMint] : undefined;
   const expandedMandateExpiry = expandedMandate
-    ? mandateExpiryLabel(expandedMandate.expiresAtSlot, currentSlot, slotEstimate)
+    ? ledgerExpiryLabel(expandedMandate.expiresAtSlot, currentSlot, slotEstimate, { expired: expandedMandate.status === "expired" })
     : "";
 
   useEffect(() => {
@@ -1500,7 +1500,7 @@ export function MandatesPanel({
       `Total spending limit: ${formatTokenAmount(expandedMandate.totalLimit, expandedMandateDecimals ?? null)}`,
       `Already spent: ${formatTokenAmount(expandedMandate.amountSpent, expandedMandateDecimals ?? null)}`,
       `Payments used: ${expandedMandate.paymentCount.toString()}${expandedMandate.maxPaymentCount === 0n ? " (no payment-count limit)" : ` of ${expandedMandate.maxPaymentCount.toString()}`}`,
-      `Expires: ${expandedMandateExpiry}`,
+      `Expires: ${expandedMandateExpiry} (slot ${expandedMandate.expiresAtSlot.toString()})`,
       `Cooldown slots: ${expandedMandate.cooldownSlots.toString()}${expandedMandate.cooldownSlots === 0n ? " (no cooldown)" : ""}`,
     ].join("\n"));
   }
@@ -1558,7 +1558,7 @@ export function MandatesPanel({
                 const symbol = selectedAsset?.label ?? "tokens";
                 const remaining = value.totalLimit > value.amountSpent ? value.totalLimit - value.amountSpent : 0n;
                 const selected = mandate?.address === value.address;
-                const expiry = mandateExpiryLabel(value.expiresAtSlot, currentSlot, slotEstimate);
+                const expiry = ledgerExpiryLabel(value.expiresAtSlot, currentSlot, slotEstimate, { expired: status === "expired" });
                 const soon = slotEstimate && currentSlot !== null ? estimatedSlotsForDays(1, slotEstimate) : null;
                 const expiringSoon = status === "active" && soon !== null && currentSlot !== null && value.expiresAtSlot > currentSlot && value.expiresAtSlot - currentSlot <= soon;
                 return (
