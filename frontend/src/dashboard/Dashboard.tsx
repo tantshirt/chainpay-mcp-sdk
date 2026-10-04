@@ -404,6 +404,9 @@ export function Dashboard({
             exists: true,
             loading: false,
           }));
+        // Settle the SOL read now, so it never becomes an unhandled rejection if the
+        // token-account read below throws first.
+        const solSettled = Promise.allSettled([solPromise]).then(([state]) => state);
         const preparations = await chainpayClient.prepareRegisteredAssetTokenAccounts(wallet);
         const tokenPromises = preparations.map(async (preparation): Promise<WalletAssetSummary> => {
           const symbol = stablecoinOptions.find((asset) => asset.mint === preparation.mint)?.label
@@ -415,7 +418,7 @@ export function Dashboard({
           return { symbol, mint: preparation.mint, address: preparation.address, balance: balance.value.uiAmountString ?? balance.value.amount, exists: true, loading: false };
         });
         const [solState, tokenStates] = await Promise.all([
-          Promise.allSettled([solPromise]).then(([state]) => state),
+          solSettled,
           Promise.allSettled(tokenPromises),
         ]);
         if (!active) return;
