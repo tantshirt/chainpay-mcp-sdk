@@ -1574,7 +1574,11 @@ export function MandatesPanel({
                 const symbol = selectedAsset?.label ?? "tokens";
                 const remaining = value.totalLimit > value.amountSpent ? value.totalLimit - value.amountSpent : 0n;
                 const selected = mandate?.address === value.address;
-                const expiry = ledgerExpiryLabel(value.expiresAtSlot, currentSlot, slotEstimate, { expired: status === "expired" });
+                // A revoked permission can spend nothing: its leftover is "unspent", not
+                // "remaining" (Overview's word for what agents may still spend), and it
+                // has no expiry left to estimate. The exact amount is kept.
+                const revoked = status === "revoked";
+                const expiry = revoked ? null : ledgerExpiryLabel(value.expiresAtSlot, currentSlot, slotEstimate, { expired: status === "expired" });
                 const soon = slotEstimate && currentSlot !== null ? estimatedSlotsForDays(1, slotEstimate) : null;
                 const expiringSoon = status === "active" && soon !== null && currentSlot !== null && value.expiresAtSlot > currentSlot && value.expiresAtSlot - currentSlot <= soon;
                 return (
@@ -1586,12 +1590,12 @@ export function MandatesPanel({
                       </div>
                     </TableCell>
                     <TableCell data-label="Amount" className="mandate-amount-cell">
-                      {mandateMints.states[value.allowedMint]?.status === "unavailable" ? <AmountsUnavailable showRaw={false} values={[["spent", value.amountSpent], ["limit", value.totalLimit], ["remaining", remaining]]} /> : <div className="cp-ledger-amounts">
+                      {mandateMints.states[value.allowedMint]?.status === "unavailable" ? <AmountsUnavailable showRaw={false} values={[["spent", value.amountSpent], ["limit", value.totalLimit], [revoked ? "unspent" : "remaining", remaining]]} /> : <div className="cp-ledger-amounts">
                         <span className="cp-ledger-spent"><Amount baseUnits={value.amountSpent} mint={value.allowedMint} showRetry={false} /><span className="cp-ledger-of">of</span><Amount baseUnits={value.totalLimit} mint={value.allowedMint} symbol={symbol} showRetry={false} /></span>
-                        <span className="cp-ledger-remaining">Remaining <Amount baseUnits={remaining} mint={value.allowedMint} symbol={symbol} showRetry={false} /></span>
+                        <span className="cp-ledger-remaining">{revoked ? "Unspent" : "Remaining"} <Amount baseUnits={remaining} mint={value.allowedMint} symbol={symbol} showRetry={false} /></span>
                       </div>}
                     </TableCell>
-                    <TableCell data-label="Expiry"><span className="cp-ledger-expiry">{expiry}</span></TableCell>
+                    <TableCell data-label="Expiry">{expiry === null ? <span className="cp-ledger-expiry is-none"><span aria-hidden="true">—</span><span className="sr-only">No expiry: revoked</span></span> : <span className="cp-ledger-expiry">{expiry}</span>}</TableCell>
                     <TableCell data-label="Status"><Status {...mandateStatusProps(status, { expiringSoon })} /></TableCell>
                     <TableCell data-label="Actions" className="mandate-table-actions">
                       {(status === "active" || status === "paused") ? <>
@@ -1622,7 +1626,7 @@ export function MandatesPanel({
         {expandedMandateDecimals === undefined && <p className="cp-record-consequences">Amounts appear once the token’s decimals are read. Exact raw units are in each amount’s details.</p>}
         <div className="cp-permission-summary">
           <div><span>Per-payment limit</span><strong><Amount baseUnits={expandedMandate.maxPerPayment} mint={expandedMandate.allowedMint} symbol={expandedMandateAsset?.label ?? "tokens"} /></strong></div>
-          <div><span>Remaining allowance</span><strong><Amount baseUnits={expandedMandate.totalLimit > expandedMandate.amountSpent ? expandedMandate.totalLimit - expandedMandate.amountSpent : 0n} mint={expandedMandate.allowedMint} symbol={expandedMandateAsset?.label ?? "tokens"} showRetry={false} /></strong></div>
+          <div><span>{expandedMandateStatus === "revoked" ? "Unspent (not spendable)" : "Remaining allowance"}</span><strong><Amount baseUnits={expandedMandate.totalLimit > expandedMandate.amountSpent ? expandedMandate.totalLimit - expandedMandate.amountSpent : 0n} mint={expandedMandate.allowedMint} symbol={expandedMandateAsset?.label ?? "tokens"} showRetry={false} /></strong></div>
         </div>
         {(expandedMandate.status === "active" || expandedMandate.status === "paused") && <div className="cp-delegate-status"><span className="section-kicker">SPL DELEGATE</span><p className="builder-intro">Token accounts have one current delegate. Repair approval replaces the delegated allowance with the mandate’s remaining allowance — it does not increment an existing approval and may displace another mandate’s delegate.</p>{delegateLoading ? <p role="status">Reading source token account…</p> : <><div className="mandate-detail-grid"><div><span>Current delegate</span><strong className="mono">{sourceDelegate ? shortAddress(sourceDelegate) : "None"}</strong></div><div><span>Remaining delegated amount</span><strong><Amount baseUnits={sourceDelegatedAmount} mint={expandedMandate.allowedMint} symbol={expandedMandateAsset?.label ?? "tokens"} showRetry={false} /></strong></div></div>{(() => {
           const remainingAllowance = expandedMandate.totalLimit > expandedMandate.amountSpent ? expandedMandate.totalLimit - expandedMandate.amountSpent : 0n;

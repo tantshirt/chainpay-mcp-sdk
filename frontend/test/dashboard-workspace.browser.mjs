@@ -251,6 +251,7 @@ section("matrix", async () => {
           assert.doesNotMatch(text, /Selected/, `${label}: no unexplained Selected suffix`);
           assert.match(await page.getByRole("row", { name: /MdT3/ }).innerText(), /Expired \w{3} \d{1,2}, \d{4}/, `${label}: an expired permission says when, in the past tense`);
           assert.match(await page.getByRole("row", { name: /MdT1/ }).innerText(), /Estimated \w{3} \d{1,2}, \d{4}/, `${label}: an active permission estimates its expiry date`);
+          assert.match(await page.getByRole("row", { name: /MdT1/ }).innerText(), /Remaining/, `${label}: an active permission shows what remains`);
         }
         if (state === "populated" && tab === "payments") {
           assert.match(text, /4\.500001\s*USDC/, `${label}: every significant digit kept`);
@@ -389,6 +390,11 @@ section("revoked", async () => {
     assert.equal(await status.getAttribute("data-tone"), "critical", `${label}: revoked is critical`);
     assert.ok(["ban", "x-circle"].includes(await status.getAttribute("data-icon")), `${label}: revoked uses ban or x-circle`);
     assert.equal(await row.getByRole("button", { name: /Pause|Resume/ }).count(), 0, `${label}: a revoked permission has no Pause`);
+    // A revoked permission can spend nothing: its leftover is "Unspent", exact, with no expiry estimate.
+    const revokedText = await row.innerText();
+    assert.match(revokedText, /Unspent\s+45\.00\s*USDC/, `${label}: revoked leftover reads Unspent, exact`);
+    assert.doesNotMatch(revokedText, /Remaining/, `${label}: a revoked row never says Remaining`);
+    assert.doesNotMatch(revokedText, /Estimated|Expires|Expired/, `${label}: no expiry estimate on a revoked row`);
     const icons = await page.locator(".mandate-table .cp-status").evaluateAll((els) => els.map((el) => `${el.textContent}:${el.dataset.icon}`));
     assert.equal(new Set(icons.map((value) => value.split(":")[1])).size, new Set(icons.map((value) => value.split(":")[0])).size, `${label}: each status has its own icon (${icons.join(", ")})`);
     await assertClean(label);
