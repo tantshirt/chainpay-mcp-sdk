@@ -1453,7 +1453,7 @@ body:has(.dashboard-app) .wallet-asset-popover { position: static; width: 100%; 
 .cp-agent-label { font: var(--ws-text-label); color: var(--ws-ink-secondary); }
 .dashboard-app.cp-app .cp-agent-scope > span:last-child { color: var(--ws-ink); font-size: 14px; }
 .dashboard-app.cp-app .cp-agent-details { grid-column: 2 / -1; margin: 0; padding: 0; border: 0; font-size: 13px; overflow-wrap: anywhere; }
-.dashboard-app.cp-app .cp-agent-details summary { padding: 6px 0; min-height: 32px; font-size: 13px; }
+.dashboard-app.cp-app .cp-agent-details summary { padding: 10px 0; min-height: 44px; font-size: 13px; }
 .dashboard-app.cp-app .cp-agent-row > .astryx-button { justify-self: end; }
 .dashboard-app.cp-app .cp-agent-details p { margin: 4px 0 0; color: var(--ws-ink-secondary); }
 @media (max-width: 760px) {
@@ -1611,3 +1611,7 @@ body:has(.dashboard-app) .wallet-asset-popover { position: static; width: 100%; 
 @media (prefers-reduced-motion: reduce) {
   .dashboard-app.cp-app *, .dashboard-app.cp-app *::before, .dashboard-app.cp-app *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }
+/* Cards list at narrow widths and 200% zoom: the table scrolls inside its surface instead of widening the page. */
+.dashboard-app.cp-app .cp-cards :is(section, div):has(> .cp-card-table-wrap) { min-width: 0; max-width: 100%; }
+.dashboard-app.cp-app .cp-card-table-wrap { position: relative; max-width: 100%; overflow-x: auto; }
+.dashboard-app.cp-app :is(.cp-card-name, .cp-link-button) { min-height: var(--ws-control-height); }
