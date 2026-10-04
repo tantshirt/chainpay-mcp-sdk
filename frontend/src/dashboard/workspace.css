@@ -547,54 +547,6 @@
   .mandate-create-toolbar { align-items: stretch; flex-direction: column; }
   .mandate-create-toolbar .button { width: 100%; }
   .mandate-table-shell { border-radius: 16px; }
-  .mandate-table-scroll { overflow: visible; }
-  .mandate-table { min-width: 0; }
-  .mandate-table thead { display: none; }
-  .mandate-table, .mandate-table tbody, .mandate-table tr { display: block; width: 100%; }
-  /*
-    `width: 100%` on a grid item is a circular dependency against an unsized
-    `1fr` track: Chrome resolved the track to 0, so every amount cell was zero
-    pixels wide and wrapped one character per line. The cells are grid items —
-    they fill their area without being told to.
-  */
-  .mandate-table td { display: block; }
-  .mandate-table tbody tr:not(.mandate-empty-row) {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 10px 16px;
-    padding: 18px;
-  }
-  .mandate-table tbody tr:not(.mandate-empty-row) td {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    min-width: 0;
-    padding: 0;
-    border: 0;
-  }
-  .mandate-table tbody tr:not(.mandate-empty-row) td::before { color: var(--muted); content: attr(data-label); font: 500 10px var(--mono); text-transform: uppercase; }
-  .mandate-table tbody tr:not(.mandate-empty-row) td[data-label="Agent"],
-  .mandate-table tbody tr:not(.mandate-empty-row) td[data-label="Amount"] { grid-column: 1 / -1; display: block; }
-  .mandate-table tbody tr:not(.mandate-empty-row) td[data-label="Agent"]::before,
-  .mandate-table tbody tr:not(.mandate-empty-row) td[data-label="Amount"]::before { display: none; }
-  /* Status and Actions share the last row. Auto placement puts them there
-     without naming a row number, which broke as soon as a column was removed. */
-  .mandate-table tbody tr:not(.mandate-empty-row) td[data-label="Status"] { grid-column: 1; justify-content: flex-start; }
-  .mandate-table tbody tr:not(.mandate-empty-row) td[data-label="Actions"] { grid-column: 2; justify-content: flex-end; }
-  .mandate-table tbody tr:not(.mandate-empty-row) td[data-label="Actions"]::before { display: none; }
-  /*
-    Astryx gives table cells `max-width: 0` — the usual trick for making a
-    fixed-layout table truncate, harmless while the table lays out as a table.
-    These rules switch it to display:block/grid for the stacked mobile row,
-    where that max-width is no longer neutralised and collapsed every cell to
-    zero pixels wide, so each amount wrapped one character per line. It is
-    declared through a :not(#\#) specificity hack, so !important is the only
-    way to reach it.
-  */
-  .mandate-table tbody tr td { max-width: none !important; }
-  .mandate-amount-cell { min-width: 0; }
-  .mandate-empty-row td { display: block; }
   .mandate-search-group { align-items: stretch; flex-direction: column; width: 100%; }
   .mandate-search-action { width: 100%; }
   .mandate-detail-card { padding: 18px; }
@@ -1025,8 +977,7 @@ body:has(.dashboard-app) .cp-record-panel :is(.mono,.t-num,.mandate-detail-value
   .dashboard-app.cp-app .dashboard-top-actions { gap: 10px; }
   .dashboard-app.cp-app .dashboard-page { padding: 28px 24px; }
   .dashboard-app.cp-app .wallet-chip { max-width: 220px; }
-  .dashboard-app.cp-app .owner-requests .assistant-input { grid-template-columns: 1fr; }
-  .dashboard-app.cp-app .mandate-table-scroll { overflow-x: auto; } }
+  .dashboard-app.cp-app .owner-requests .assistant-input { grid-template-columns: 1fr; } }
 @media (max-width: 520px) {
   .dashboard-app.cp-app .dashboard-page { padding: 26px 16px; }
   .dashboard-app.cp-app .dashboard-heading { flex-direction: column; align-items: flex-start; gap: 18px; }
@@ -1061,13 +1012,6 @@ body:has(.dashboard-app) .cp-record-panel :is(.mono,.t-num,.mandate-detail-value
 .dashboard-app.cp-app .owner-requests { grid-template-columns: minmax(0,1fr); }
 .dashboard-app.cp-app .owner-inbox [role="tablist"] { max-width: 100%; overflow-x: auto; }
 .dashboard-app.cp-app .owner-service-requests summary { display: flex; gap: 8px; align-items: center; }
-@media (max-width: 760px) {
-  .dashboard-app.cp-app .mandate-table-shell { padding: 0; }
-  .dashboard-app.cp-app .mandate-table tbody tr:not(.mandate-empty-row) { padding: 20px; gap: 16px; border-bottom: 1px solid var(--line); }
-  .dashboard-app.cp-app .mandate-table tbody tr:not(.mandate-empty-row) td { padding: 0; }
-  .dashboard-app.cp-app .mandate-table tbody tr:not(.mandate-empty-row) td[data-label="Date"] { grid-column: 1 / -1; justify-content: flex-start; }
-  .dashboard-app.cp-app .mandate-table tbody tr:not(.mandate-empty-row) td::before { flex-shrink: 0; font-size: 12px; text-transform: none; }
-  .dashboard-app.cp-app .mandate-table tbody tr:not(.mandate-empty-row) td[data-label="Status"]::before { display: none; } }
 @media (max-width: 520px) {
   .dashboard-app.cp-app .owner-breadcrumb { display: none; }
   .dashboard-app.cp-app .owner-small-empty { padding: 28px 0; }
@@ -1147,11 +1091,11 @@ body:has(.dashboard-app) .wallet-asset-popover { position: static; width: 100%; 
 .dashboard-app.cp-app .receipt-ledger-status strong { color: #287253; font-size: 13px; font-weight: 500; }
 .dashboard-app.cp-app .receipt-ledger-status small { margin-top: 4px; color: #606b7c; font-size: 12px; }
 .dashboard-app.cp-app .receipt-ledger-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 0; }
-@media (max-width: 760px) {
+@container receipts (max-width: 760px) {
   .dashboard-app.cp-app .receipt-ledger-table thead { display: none; }
   .dashboard-app.cp-app .receipt-ledger-table, .dashboard-app.cp-app .receipt-ledger-table tbody { display: block; width: 100%; }
   .dashboard-app.cp-app .receipt-ledger-row { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 12px; padding: 16px 0; }
-  .dashboard-app.cp-app .receipt-ledger-table td { max-width: none !important; min-width: 0; padding: 0; border: 0; }
+  .dashboard-app.cp-app .receipt-ledger-table td { max-width: none !important; min-width: 0; padding: 0; border: 0; overflow: visible; }
   .dashboard-app.cp-app .receipt-ledger-table td:first-child { grid-column: 1 / -1; }
   .dashboard-app.cp-app .receipt-ledger-main { padding: 12px; }
   .dashboard-app.cp-app .receipt-ledger-status { display: block; padding: 0 12px; }
@@ -1413,7 +1357,6 @@ body:has(.dashboard-app) .wallet-asset-popover { position: static; width: 100%; 
 .dashboard-app.cp-app .cp-ledger .mandate-table th:nth-child(3) { width: 17%; }
 .dashboard-app.cp-app .cp-ledger .mandate-table th:nth-child(4) { width: 15%; }
 .dashboard-app.cp-app .cp-ledger .mandate-table th:nth-child(5) { width: 13%; }
-.dashboard-app.cp-app .cp-ledger .mandate-table td[data-label="Status"] .cp-status { white-space: normal; }
 .dashboard-app.cp-app .cp-ledger .mandate-table tbody tr.is-selected { background: #f7f9ff; }
 .cp-ledger-permission { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .cp-ledger-permission > span { min-width: 0; }
@@ -1433,10 +1376,60 @@ body:has(.dashboard-app) .wallet-asset-popover { position: static; width: 100%; 
 @media (max-width: 760px) {
   .cp-ledger-toolbar { align-items: stretch; flex-direction: column; }
   .dashboard-app.cp-app .cp-ledger-search { width: 100%; flex-basis: auto; }
-  .dashboard-app.cp-app .cp-ledger .mandate-table tbody tr:not(.mandate-empty-row) { padding: 16px; gap: 12px 16px; border-bottom: 1px solid var(--ws-border-soft); }
+}
+/*
+  The ledger stacks into one card per permission when its own box is narrow,
+  not the viewport: at tablet width the sidebar leaves the table about 500px,
+  where five columns clipped Pause/Resume and broke status words. A container
+  query keeps Pause/Resume visible at any width without sideways scrolling.
+*/
+.dashboard-app.cp-app .cp-ledger { container: ledger / inline-size; }
+@container ledger (max-width: 860px) {
+  .mandate-table-scroll { overflow: visible; }
+  .mandate-table { min-width: 0; }
+  .mandate-table thead { display: none; }
+  .mandate-table, .mandate-table tbody, .mandate-table tr { display: block; width: 100%; }
+  /*
+    `width: 100%` on a grid item is a circular dependency against an unsized
+    `1fr` track: Chrome resolved the track to 0, so every amount cell was zero
+    pixels wide and wrapped one character per line. The cells are grid items —
+    they fill their area without being told to.
+  */
+  .mandate-table td { display: block; }
+  .dashboard-app.cp-app .cp-ledger .mandate-table tbody tr:not(.mandate-empty-row) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px 16px;
+    padding: 16px;
+    border-bottom: 1px solid var(--ws-border-soft);
+  }
+  .dashboard-app.cp-app .cp-ledger .mandate-table tbody tr:not(.mandate-empty-row) td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+  }
+  .dashboard-app.cp-app .cp-ledger .mandate-table tbody tr:not(.mandate-empty-row) td::before { content: attr(data-label); flex-shrink: 0; font: var(--ws-text-label); text-transform: none; color: var(--ws-ink-secondary); }
+  .dashboard-app.cp-app .cp-ledger .mandate-table tbody tr:not(.mandate-empty-row) :is(td[data-label="Agent"], td[data-label="Amount"]) { grid-column: 1 / -1; display: block; }
+  .dashboard-app.cp-app .cp-ledger .mandate-table tbody tr:not(.mandate-empty-row) :is(td[data-label="Agent"], td[data-label="Amount"], td[data-label="Status"], td[data-label="Actions"])::before { display: none; }
   .dashboard-app.cp-app .cp-ledger .mandate-table tbody tr:not(.mandate-empty-row) td[data-label="Expiry"] { grid-column: 1 / -1; justify-content: flex-start; }
-  .dashboard-app.cp-app .cp-ledger .mandate-table tbody tr:not(.mandate-empty-row) td::before { font: var(--ws-text-label); text-transform: none; color: var(--ws-ink-secondary); }
-  .dashboard-app.cp-app .cp-ledger .mandate-table tbody tr:not(.mandate-empty-row) td[data-label="Status"]::before { display: none; }
+  /* Status and Actions share the last row. Auto placement puts them there
+     without naming a row number, which broke as soon as a column was removed. */
+  .dashboard-app.cp-app .cp-ledger .mandate-table tbody tr:not(.mandate-empty-row) td[data-label="Status"] { grid-column: 1; justify-content: flex-start; }
+  .dashboard-app.cp-app .cp-ledger .mandate-table tbody tr:not(.mandate-empty-row) td[data-label="Actions"] { grid-column: 2; justify-content: flex-end; }
+  /*
+    Astryx gives table cells `max-width: 0` — the usual trick for making a
+    fixed-layout table truncate, harmless while the table lays out as a table.
+    Stacked, that max-width collapses every cell to zero pixels wide. It is
+    declared through a :not(#\#) specificity hack, so !important is the only
+    way to reach it.
+  */
+  .mandate-table tbody tr td { max-width: none !important; }
+  .mandate-amount-cell { min-width: 0; }
+  .mandate-empty-row td { display: block; }
 }
 
 /* --------------------------------------------------------------------------
@@ -1498,12 +1491,16 @@ body:has(.dashboard-app) .wallet-asset-popover { position: static; width: 100%; 
 .dashboard-app.cp-app .owner-service-requests[open] { padding-bottom: 20px; }
 @media (max-width: 760px) {
   .dashboard-app.cp-app .owner-inbox { padding: 4px 16px 12px; }
+  .dashboard-app.cp-app .owner-request-body { padding-left: 0; }
+}
+/* Request rows stack by the inbox's own width (same reason as the permissions ledger). */
+.dashboard-app.cp-app .owner-inbox { container: inbox / inline-size; }
+@container inbox (max-width: 820px) {
   .dashboard-app.cp-app .cp-request-row { grid-template-columns: 36px minmax(0, 1fr) auto; align-items: start; }
   .dashboard-app.cp-app .cp-request-row > .cp-row-main { grid-column: 2 / -1; }
   .dashboard-app.cp-app .cp-request-row > .cp-request-amount { grid-column: 2 / -1; grid-row: 2; text-align: left; }
   .dashboard-app.cp-app .cp-request-row > .cp-status { grid-column: 2 / -1; grid-row: 3; justify-self: start; }
   .dashboard-app.cp-app .cp-request-row > .cp-request-next { grid-column: 2 / -1; grid-row: 4; justify-self: start; min-height: 32px; }
-  .dashboard-app.cp-app .owner-request-body { padding-left: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .cp-request-next svg { transition: none; } }
 
@@ -1515,10 +1512,14 @@ body:has(.dashboard-app) .wallet-asset-popover { position: static; width: 100%; 
 .dashboard-app.cp-app .receipt-ledger-heading-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
 .dashboard-app.cp-app .onchain-receipts-card .receipt-ledger-table { width: 100%; font: var(--ws-text-table); }
 .dashboard-app.cp-app .onchain-receipts-card .receipt-ledger-table th { padding: 12px; font: var(--ws-text-label); color: var(--ws-ink-secondary); text-transform: none; }
-.dashboard-app.cp-app .onchain-receipts-card .receipt-ledger-table th:nth-child(1) { width: 44%; }
-.dashboard-app.cp-app .onchain-receipts-card .receipt-ledger-table th:nth-child(2) { width: 20%; }
-.dashboard-app.cp-app .onchain-receipts-card .receipt-ledger-table th:nth-child(3) { width: 18%; }
-.dashboard-app.cp-app .onchain-receipts-card .receipt-ledger-table th:nth-child(4) { width: 18%; }
+/* The payment column takes what the receipt actions leave; the actions column fits its buttons. */
+.dashboard-app.cp-app .onchain-receipts-card { container: receipts / inline-size; }
+.dashboard-app.cp-app .onchain-receipts-card .receipt-ledger-table th:nth-child(2) { width: 18%; }
+.dashboard-app.cp-app .onchain-receipts-card .receipt-ledger-table th:nth-child(3) { width: 16%; }
+.dashboard-app.cp-app .onchain-receipts-card .receipt-ledger-table th:nth-child(4) { width: 1%; }
+/* Astryx's `max-width: 0` cell trick would let the actions column shrink below its buttons. */
+.dashboard-app.cp-app .onchain-receipts-card .receipt-ledger-table td:last-child { max-width: none !important; }
+.dashboard-app.cp-app .onchain-receipts-card .receipt-ledger-actions { width: max-content; margin-left: auto; }
 .dashboard-app.cp-app .cp-ledger-num { text-align: right; }
 .dashboard-app.cp-app .receipt-ledger-amount { font: 500 15px/22px Inter, sans-serif; color: var(--ws-ink); }
 .dashboard-app.cp-app .receipt-ledger-amount .cp-amount { justify-content: flex-end; }
@@ -1529,7 +1530,7 @@ body:has(.dashboard-app) .wallet-asset-popover { position: static; width: 100%; 
 .dashboard-app.cp-app .receipt-ledger-status small { font: 400 12px/16px Inter, sans-serif; color: var(--ws-ink-secondary); }
 .dashboard-app.cp-app .receipt-ledger-row.is-selected { background: #f7f9ff; }
 .dashboard-app.cp-app .onchain-receipts-card .cp-collection-notice { margin-top: 4px; }
-@media (max-width: 760px) {
+@container receipts (max-width: 760px) {
   .dashboard-app.cp-app .receipt-ledger-row { grid-template-columns: minmax(0, 1fr) auto; }
   .dashboard-app.cp-app .receipt-ledger-table td.receipt-ledger-amount { grid-column: 1 / -1; text-align: left; padding: 0 0 0 56px; }
   .dashboard-app.cp-app .receipt-ledger-amount .cp-amount { justify-content: flex-start; }
@@ -1606,3 +1607,10 @@ body:has(.dashboard-app) .wallet-asset-popover { position: static; width: 100%; 
 /* Navigation chrome keeps the 14/20 rhythm on whole pixels, so the sticky footer lines up with the viewport edge. */
 .dashboard-app.cp-app :is(.dashboard-sidebar, .dashboard-topbar) { font: 400 14px/20px Inter, sans-serif; }
 .dashboard-app.cp-app .dashboard-sidebar-brand { height: 56px; }
+/* Phone width: every tab and filter stays in view. Tab strips wrap instead of
+   scrolling a tab past the edge; the five permission filters share the row. */
+@media (max-width: 520px) {
+  .dashboard-app.cp-app .dashboard-page .astryx-tab-strip { flex-wrap: wrap; overflow-x: visible; }
+  .dashboard-app.cp-app .cp-ledger-filter { width: 100%; }
+  .dashboard-app.cp-app .cp-ledger-filter .astryx-segmented-control-item { flex: 1 1 auto; padding-inline: 6px; }
+}
