@@ -36,6 +36,8 @@ export function useCardsSummary({ wallet, signedIn, walletSigner, walletMessageS
     source.listCards().then(
       (cards) => {
         if (!active) return;
+        // A malformed answer is a failed read, never "no cards".
+        if (!Array.isArray(cards)) { setResult({ wallet, value: { state: "failed" } }); return; }
         const summary = summarizeCards(cards);
         setResult({ wallet, value: summary.total ? { state: "loaded", summary } : { state: "empty", summary } });
       },
